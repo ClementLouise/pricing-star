@@ -2,6 +2,7 @@ import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.webhooks import router as webhooks_router
 from app.auth import TenantContext, require_auth
 from app.config import settings
 from app.logging import configure_logging, get_logger
@@ -18,6 +19,8 @@ app = FastAPI(
     docs_url="/docs" if settings.environment != "production" else None,
     redoc_url=None,
 )
+
+app.include_router(webhooks_router)
 
 app.add_middleware(
     CORSMiddleware,
