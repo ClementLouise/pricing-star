@@ -3,15 +3,15 @@ import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 
 export default function AuthGuard() {
-  const { isAuthenticated, loginWithRedirect } = useAuth0();
+  const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       loginWithRedirect();
     }
-  }, [isAuthenticated, loginWithRedirect]);
+  }, [isAuthenticated, isLoading, loginWithRedirect]);
 
-  if (!isAuthenticated) return null;
+  if (isLoading || !isAuthenticated) return null;
 
   return <Outlet />;
 }
