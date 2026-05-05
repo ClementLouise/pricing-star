@@ -1,0 +1,70 @@
+{
+  "version": "1.1",
+  "errata_note": "PPP convention corrected to multiply (CMS Federal Register Dec 2025)",
+  "asset": {
+    "name": "VX-CFTR-NG",
+    "us_list_price": 370000,
+    "us_net_share": 0.5,
+    "launch_year": 2027,
+    "patent_expiry": 2042,
+    "us_patient_population": 30000,
+    "ex_us_patient_population": 50000,
+    "patient_capture_rate_at_peak": 0.6,
+    "ramp_years": 5,
+    "discount_rate": 0.1
+  },
+  "scenarios": [
+    {
+      "name": "BASELINE (Pre-MFN)",
+      "us_price": 370000,
+      "us_medicaid_price": null,
+      "effective_us_net": null,
+      "method_i_price": null,
+      "method_i_anchor": null,
+      "method_ii": null,
+      "benchmark": null,
+      "weighted_rebate": null,
+      "npv": 46740264300.0638,
+      "peak_revenue": 7600294422.786964
+    },
+    {
+      "name": "GENEROUS only (Medicaid MFN, 2027)",
+      "us_price": 370000,
+      "us_medicaid_price": 199611.56978635196,
+      "effective_us_net": null,
+      "method_i_price": null,
+      "method_i_anchor": null,
+      "method_ii": null,
+      "benchmark": null,
+      "weighted_rebate": null,
+      "npv": 46961761154.2215,
+      "peak_revenue": 7600294422.786964
+    },
+    {
+      "name": "GENEROUS + GUARD (Medicaid + Part D, 2028)",
+      "us_price": 370000,
+      "us_medicaid_price": 199611.56978635196,
+      "effective_us_net": 185000.0,
+      "method_i_price": 187617.03503223415,
+      "method_i_anchor": "CH",
+      "method_ii": 156799.39906836135,
+      "benchmark": 187617.03503223415,
+      "weighted_rebate": null,
+      "npv": 46740264300.0638,
+      "peak_revenue": 7600294422.786964
+    },
+    {
+      "name": "FULL MFN (G+G+G, 2029)",
+      "us_price": 370000,
+      "us_medicaid_price": 199611.56978635196,
+      "effective_us_net": 185000.0,
+      "method_i_price": 187617.03503223415,
+      "method_i_anchor": "CH",
+      "method_ii": 156799.39906836135,
+      "benchmark": 187617.03503223415,
+      "weighted_rebate": 0.0,
+      "npv": 46740264300.0638,
+      "peak_revenue": 7600294422.786964
+    }
+  ]
+}

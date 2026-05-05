@@ -1,0 +1,42 @@
+﻿# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Environment & secrets (CRITIQUE)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Windows / Mac system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+coverage/
+.coverage
+.pytest_cache/
+
+# Database
+*.sqlite
+*.sqlite3
