@@ -2,15 +2,18 @@
 node_modules/
 __pycache__/
 *.pyc
+*.pyo
 .venv/
 venv/
+env/
 
 # Build outputs
 dist/
 build/
 .next/
+frontend/dist/
 
-# Environment & secrets (CRITIQUE)
+# Environment & secrets — never commit
 .env
 .env.local
 .env.*.local
@@ -22,6 +25,8 @@ secrets/
 .vscode/
 .idea/
 *.swp
+*.swo
+.cursor/
 
 # Windows / Mac system files
 .DS_Store
@@ -36,7 +41,21 @@ logs/
 coverage/
 .coverage
 .pytest_cache/
+htmlcov/
+.mypy_cache/
+.ruff_cache/
 
 # Database
 *.sqlite
 *.sqlite3
+
+# Alembic — generated files only, not migrations themselves
+backend/alembic/versions/__pycache__/
+
+# Vitest / Playwright
+test-results/
+playwright-report/
+blob-report/
+
+# Railway / infra
+.railway/
