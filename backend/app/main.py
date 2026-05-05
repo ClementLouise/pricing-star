@@ -2,6 +2,7 @@ import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import TenantContext, require_auth
 from app.config import settings
 from app.logging import configure_logging, get_logger
 
@@ -35,3 +36,12 @@ async def startup() -> None:
 @app.get("/health", tags=["ops"])
 async def health() -> dict[str, str]:
     return {"status": "ok", "environment": settings.environment}
+
+
+@app.get("/api/me", tags=["auth"])
+async def me(ctx: TenantContext = Depends(require_auth)) -> dict:
+    return {
+        "auth0_user_id": ctx.auth0_user_id,
+        "tenant_id": str(ctx.tenant_id),
+        "tenant_tier": ctx.tenant_tier,
+    }
