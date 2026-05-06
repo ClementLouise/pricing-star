@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 
-import { useApi } from "@/lib/api";
-import type { AssetCreate, AssetUpdate } from "@/types/api";
+import { ApiError, useApi } from "@/lib/api";
+import type { Asset, AssetCreate, AssetUpdate } from "@/types/api";
 
 export function useAssetList() {
   const api = useApi();
@@ -32,13 +33,40 @@ export function useCreateAsset() {
 export function useUpdateAsset(id: string) {
   const api = useApi();
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: AssetUpdate) => api.assets.update(id, payload),
+  const [conflict, setConflict] = useState<AssetUpdate | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: (payload: AssetUpdate) => {
+      // Auto-inject expected_updated_at from TanStack Query cache (EC-UI-02)
+      const cached = qc.getQueryData<Asset>(["assets", id]);
+      return api.assets.update(id, {
+        ...payload,
+        expected_updated_at: payload.expected_updated_at ?? cached?.updated_at ?? null,
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets", id] });
       qc.invalidateQueries({ queryKey: ["assets"] });
+      setConflict(null);
+    },
+    onError: (error: unknown, variables: AssetUpdate) => {
+      if (error instanceof ApiError && error.status === 409) {
+        setConflict(variables);
+      }
     },
   });
+
+  const forceOverwrite = useCallback(() => {
+    if (conflict) mutation.mutate({ ...conflict, force_override: true });
+  }, [conflict, mutation]);
+
+  const reload = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["assets", id] });
+    qc.invalidateQueries({ queryKey: ["assets"] });
+    setConflict(null);
+  }, [qc, id]);
+
+  return { ...mutation, conflict, forceOverwrite, reload, dismissConflict: () => setConflict(null) };
 }
 
 export function useArchiveAsset() {

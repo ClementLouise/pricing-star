@@ -45,7 +45,10 @@ export interface AssetCreate {
   ramp_years?: number | null;
 }
 
-export type AssetUpdate = Partial<AssetCreate>;
+export type AssetUpdate = Partial<AssetCreate> & {
+  expected_updated_at?: string | null;
+  force_override?: boolean;
+};
 
 export interface CountryData {
   id: string;
@@ -58,6 +61,7 @@ export interface CountryData {
   withdrawn: boolean;
   g2n_ratio: number | null;
   g2n_time_series: Record<string, number> | null;
+  updated_at: string;
 }
 
 export interface GenerousConfig {
@@ -189,6 +193,8 @@ export interface CountryDataInput {
   withdrawn?: boolean;
   g2n_ratio?: number | null;
   g2n_time_series?: Record<string, number> | null;
+  expected_updated_at?: string | null;
+  force_override?: boolean;
 }
 
 export interface ScenarioCreate {
@@ -201,7 +207,10 @@ export interface ScenarioCreate {
   country_data?: Array<CountryDataInput & { country_code: string }>;
 }
 
-export type ScenarioUpdate = Partial<ScenarioCreate>;
+export type ScenarioUpdate = Partial<ScenarioCreate> & {
+  expected_updated_at?: string | null;
+  force_override?: boolean;
+};
 
 export interface ScenarioDuplicate {
   new_name: string;
