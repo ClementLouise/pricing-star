@@ -2,6 +2,7 @@ import sentry_sdk
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.api_keys import router as api_keys_router
 from app.api.assets import router as assets_router
 from app.api.audit_logs import router as audit_logs_router
 from app.api.reference import router as reference_router
@@ -48,6 +49,7 @@ async def security_headers(request: Request, call_next: object) -> Response:
 
 _API = "/api"
 app.include_router(webhooks_router)
+app.include_router(api_keys_router)
 app.include_router(assets_router, prefix=_API)
 app.include_router(scenarios_router, prefix=_API)
 app.include_router(simulations_router, prefix=_API)

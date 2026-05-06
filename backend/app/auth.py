@@ -1,8 +1,9 @@
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable
 
+import bcrypt
 import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -19,6 +20,7 @@ log = get_logger(__name__)
 bearer_scheme = HTTPBearer()
 
 CLAIMS_NS = "https://pricingstar.io"
+API_KEY_PREFIX = "ppi_"
 
 _jwks_cache: dict | None = None
 
@@ -41,11 +43,52 @@ class TenantContext:
     auth0_user_id: str
 
 
+async def _auth_via_api_key(token: str, db: AsyncSession) -> TenantContext:
+    """Validate a ppi_ API key Bearer token and return tenant context."""
+    from app.models.api_key import ApiKey
+    from app.models.tenant import Tenant
+    from app.repos.api_key import ApiKeyRepo
+
+    prefix = token[:8]
+    candidates = await ApiKeyRepo(db).get_by_prefix(prefix)
+
+    matched: ApiKey | None = None
+    for candidate in candidates:
+        try:
+            if bcrypt.checkpw(token.encode(), candidate.key_hash.encode()):
+                matched = candidate
+                break
+        except Exception:
+            continue
+
+    if matched is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+
+    if matched.revoked_at is not None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has been revoked")
+
+    if matched.expires_at and matched.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has expired")
+
+    tenant = await db.get(Tenant, matched.tenant_id)
+    return TenantContext(
+        tenant_id=matched.tenant_id,
+        tenant_tier=tenant.tier if tenant else "trial",
+        trial_expires_at=tenant.trial_expires_at if tenant else None,
+        auth0_user_id=f"apikey:{matched.id}",
+    )
+
+
 async def require_auth(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
 ) -> TenantContext:
-    """Validate JWT and extract tenant context — does NOT hit the database."""
+    """Validate JWT or API key Bearer token and return tenant context."""
     token = credentials.credentials
+
+    if token.startswith(API_KEY_PREFIX):
+        return await _auth_via_api_key(token, db)
+
     try:
         jwks = await _get_jwks()
         payload = jwt.decode(
