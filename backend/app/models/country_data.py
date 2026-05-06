@@ -1,7 +1,8 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, UniqueConstraint
-from sqlalchemy import JSON
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import JSON, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -42,3 +43,7 @@ class CountryData(Base):
     g2n_ratio: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
     # Per-year G2N overrides: {"2027": 0.85, "2028": 0.83, ...}
     g2n_time_series: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
