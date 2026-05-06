@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     # Sentry (optional)
     sentry_dsn: str = ""
 
+    # CORS
+    allowed_origins: list[str] = ["http://localhost:5173"]
+
+    # Trial limits
+    trial_max_assets: int = 5
+    trial_max_scenarios_per_asset: int = 3
+    trial_max_users: int = 3
+
     @property
     def auth0_jwks_url(self) -> str:
         return f"https://{self.auth0_domain}/.well-known/jwks.json"
