@@ -1,4 +1,6 @@
 """Asset repository — every query filters by tenant_id per PRD §03."""
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, timezone
 

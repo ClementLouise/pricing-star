@@ -1,4 +1,6 @@
 """API key repository — tenant-scoped queries, soft-delete via revoked_at."""
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, timezone
 
