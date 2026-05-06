@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import require_role
 from app.database import get_db
+from app.models.asset import Asset
 from app.models.user import User
 from app.repos.asset import AssetRepo
 from app.repos.audit import AuditRepo
@@ -18,6 +19,27 @@ from app.schemas.scenario import (
     ScenarioRead,
     ScenarioUpdate,
 )
+
+
+def _assert_g2n_lifecycle(g2n_time_series: dict[str, float] | None, asset: Asset) -> None:
+    """EC-CALC-13: reject g2n_time_series years outside [launch_year, loe_year + 5]."""
+    if not g2n_time_series:
+        return
+    launch = asset.launch_year
+    loe = asset.loe_year
+    if launch is None or loe is None:
+        return
+    max_year = loe + 5
+    for key in g2n_time_series:
+        try:
+            year = int(key)
+        except (ValueError, TypeError):
+            continue  # already caught by Pydantic
+        if not (launch <= year <= max_year):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Year {year} is outside asset lifecycle [{launch}, {max_year}]",
+            )
 
 router = APIRouter(tags=["scenarios"])
 
@@ -50,6 +72,9 @@ async def create_scenario(
     asset = await AssetRepo(db).get(asset_id, user.tenant_id)
     if asset is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+
+    for cd_input in payload.country_data.values():
+        _assert_g2n_lifecycle(cd_input.g2n_time_series, asset)
 
     scenario_repo = ScenarioRepo(db)
     scenario = await scenario_repo.create(asset_id, user.tenant_id, user.id, payload)
@@ -182,6 +207,9 @@ async def upsert_country_data(
     scenario = await ScenarioRepo(db).get(scenario_id, user.tenant_id)
     if scenario is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenario not found")
+    asset = await AssetRepo(db).get(scenario.asset_id, user.tenant_id)
+    if asset is not None:
+        _assert_g2n_lifecycle(payload.g2n_time_series, asset)
     cd = await CountryDataRepo(db).upsert(scenario_id, user.tenant_id, country_code.upper(), payload)
     return CountryDataRead.model_validate(cd)
 
