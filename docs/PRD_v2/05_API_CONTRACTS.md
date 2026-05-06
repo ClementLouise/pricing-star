@@ -174,7 +174,7 @@ Create new asset.
 
 **Response 201**: Created asset.
 
-**Validation errors (400)**:
+**Validation errors (422)**:
 - `us_list_price` must be > 0
 - `loe_year > launch_year`
 - `peak_year >= launch_year && peak_year < loe_year`
@@ -329,7 +329,7 @@ Run a synchronous simulation. Returns full results.
 ```
 
 **Errors**:
-- 400: Missing required prices in OECD-19 basket
+- 422: Missing required prices in OECD-19 basket
 - 422: Cascade did not converge (max iterations reached without convergence)
 
 ### POST /scenarios/{scenario_id}/monte-carlo
@@ -633,7 +633,7 @@ All errors return RFC 7807 Problem Details:
 {
   "type": "https://api.example.com/errors/validation",
   "title": "Validation failed",
-  "status": 400,
+  "status": 422,
   "detail": "us_list_price must be greater than 0",
   "instance": "/v1/assets",
   "errors": [
@@ -644,9 +644,14 @@ All errors return RFC 7807 Problem Details:
 
 ### Error codes
 
+> **Note:** This API follows the WebDAV (RFC 4918) convention adopted by FastAPI/Pydantic for HTTP semantic errors:
+> - **400 Bad Request** — malformed request (unparseable JSON, wrong Content-Type, missing required headers)
+> - **422 Unprocessable Entity** — well-formed request but semantically invalid data (Pydantic validation: price = 0, year ordering violations, out-of-range values, etc.)
+
 | Code | HTTP | When |
 |------|------|------|
-| `validation_error` | 400 | Invalid input data |
+| `bad_request` | 400 | Malformed request (parse error, wrong Content-Type) |
+| `validation_error` | 422 | Invalid input data (Pydantic constraint violated) |
 | `unauthenticated` | 401 | Missing or invalid token |
 | `forbidden` | 403 | Insufficient permissions |
 | `not_found` | 404 | Entity does not exist (or in different tenant) |
