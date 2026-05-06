@@ -10,6 +10,7 @@ from app.engine.anchor import analyze_mfn_anchor
 from app.engine.cascade import run_cascade
 from app.engine.de_cascade import simulate_de_cascade
 from app.engine.methods import calculate_guard_method_i, calculate_guard_method_ii, calculate_guard_rebate
+from app.engine.npv import resolve_g2n as _resolve_g2n
 from app.engine.monte_carlo import monte_carlo_g2n
 from app.engine.npv import compute_npv
 from app.engine.types import AssetConfig, CountryData as EngineCountryData, ScenarioConfig
@@ -165,45 +166,64 @@ async def run_simulation(
     method_i_value = method_i_result.price if method_i_result else None
     method_i_anchor = method_i_result.country if method_i_result else None
 
-    # F2/F4: Method II (year = launch_year + 1 as first full year)
     guard_config = regulations.get("guard", {})
     submit_method_ii = guard_config.get("submit_method_ii", False)
-    method_ii_value: float | None = None
-    if submit_method_ii:
-        scenario_cfg = _build_scenario_config(country_rows)
-        us_net = float(asset.us_list_price or 0) * float(asset.us_net_share or 0.5)
-        net_prices = {
-            c: p * scenario_cfg.country_data[c].g2n_ratio
-            for c, p in cascaded_prices.items()
-            if c in scenario_cfg.country_data
-        }
-        vol_dict = {c: cd.volume_share for c, cd in scenario_cfg.country_data.items()}
-        sim_year = (asset.launch_year or 2027) + 1
-        method_ii_value = calculate_guard_method_ii(net_prices, vol_dict, year=sim_year)
-
-    # F5-F6: Rebate
+    guard_active = guard_config.get("active", False)
     us_net_price = float(asset.us_list_price or 0) * float(asset.us_net_share or 0.5)
-    rebate_result = calculate_guard_rebate(
-        us_net_price=us_net_price,
-        method_i=method_i_value,
-        method_ii=method_ii_value,
-        use_method_ii=submit_method_ii,
-    )
 
-    # Determine MFN benchmark and effective US net
-    applicable_benchmark = rebate_result.benchmark
-    effective_us_net = max(us_net_price - rebate_result.rebate_per_unit, 0) if rebate_result.rebate_per_unit else us_net_price
-
-    # F9-F10: NPV — apply GR clawback stress if toggled (forces GR G2N to 55%)
+    # F9-F10: build scenario config (with optional GR clawback stress)
     g2n_overrides = {"GR": 0.55} if levers.get("gr_clawback_stress", False) else None
     scenario_cfg = _build_scenario_config(country_rows, g2n_overrides=g2n_overrides)
-    guard_active = guard_config.get("active", False)
-    us_net_override = effective_us_net if guard_active and rebate_result.rebate_per_unit > 0 else None
+    vol_dict = {c: cd.volume_share for c, cd in scenario_cfg.country_data.items()}
+
+    # F2/F5: EC-CALC-17 — Method II and rebate computed per year using time-variant G2N.
+    # Per PRD §04 F3: caller resolves net_prices[country] = list_price × resolve_g2n(country, year)
+    # before passing to calculate_guard_method_ii.
+    launch_year = asset_config.launch_year
+    horizon = min(asset_config.patent_expiry - launch_year + 1, 15)
+
+    method_ii_value: float | None = None   # representative value for persisted summary (year 1)
+    applicable_benchmark: float | None = None
+    effective_us_net: float = us_net_price  # summary value for persisted record (year 1)
+
+    us_net_schedule: dict[int, float] | None = None
+
+    if guard_active:
+        us_net_schedule = {}
+        for year in range(launch_year, launch_year + horizon):
+            if submit_method_ii:
+                net_prices_year = {}
+                for c, lp in cascaded_prices.items():
+                    if c not in scenario_cfg.country_data:
+                        continue
+                    try:
+                        g2n_y = _resolve_g2n(c, year, scenario_cfg, {})
+                    except ValueError:
+                        g2n_y = scenario_cfg.country_data[c].g2n_ratio or 0.80
+                    net_prices_year[c] = lp * g2n_y
+                method_ii_year = calculate_guard_method_ii(net_prices_year, vol_dict, year=year)
+            else:
+                method_ii_year = None
+
+            rebate_year = calculate_guard_rebate(
+                us_net_price=us_net_price,
+                method_i=method_i_value,
+                method_ii=method_ii_year,
+                use_method_ii=submit_method_ii,
+            )
+            us_net_schedule[year] = max(us_net_price - rebate_year.rebate_per_unit, 0)
+
+            # Keep year-1 values for the persisted simulation summary columns
+            if year == launch_year + 1:
+                method_ii_value = method_ii_year
+                applicable_benchmark = rebate_year.benchmark
+                effective_us_net = us_net_schedule[year]
+
     npv_result = compute_npv(
         cascaded_prices,
         asset_config,
         scenario_cfg,
-        us_net_override=us_net_override,
+        us_net_schedule=us_net_schedule,
     )
 
     elapsed_ms = int((monotonic() - start) * 1000)
@@ -221,7 +241,7 @@ async def run_simulation(
         method_i_anchor=method_i_anchor,
         method_ii_value=method_ii_value,
         applicable_benchmark=applicable_benchmark,
-        per_unit_rebate=rebate_result.rebate_per_unit,
+        per_unit_rebate=round(us_net_price - effective_us_net, 6),
         effective_us_net=effective_us_net,
         cascade_iterations=cascade_result.iterations,
         cascade_converged=cascade_result.converged,
@@ -233,6 +253,8 @@ async def run_simulation(
                 "ex_us_revenue": row.ex_us_revenue,
                 "total_net": row.us_revenue + row.ex_us_revenue,
                 "discounted": row.us_revenue + row.ex_us_revenue,
+                "rebate_per_unit": row.rebate_per_unit,
+                "effective_us_net": row.effective_us_net,
             }
             for row in npv_result.yearly_breakdown
         ],

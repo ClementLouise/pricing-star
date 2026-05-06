@@ -78,12 +78,16 @@ def compute_npv(
     scenario_config: ScenarioConfig,
     country_reference: Optional[dict[str, dict]] = None,
     us_net_override: Optional[float] = None,
+    us_net_schedule: Optional[dict[int, float]] = None,
 ) -> NPVResult:
     """
     F10: Compute total NPV over the asset lifecycle horizon.
 
-    us_net_override: if provided, replaces the default US net price (us_list × us_net_share).
-                     Pass effective_us_net (after MFN rebate) to compute MFN-impacted NPV.
+    us_net_schedule: year → effective_us_net mapping (EC-CALC-17 time-variant rebate).
+                     Takes precedence over us_net_override when provided.
+    us_net_override: single effective_us_net applied to all years (deprecated in favour of
+                     us_net_schedule; kept for backward compatibility with callers that
+                     pre-compute a single rebate).
 
     Horizon = min(patent_expiry - launch_year + 1, 15) years, matching V2.0 reference.
     """
@@ -103,17 +107,23 @@ def compute_npv(
     total_ex_us = (
         asset_config.ex_us_patient_population * asset_config.patient_capture_rate_at_peak
     )
-    us_net = (
-        us_net_override
-        if us_net_override is not None
-        else asset_config.us_list_price * asset_config.us_net_share
-    )
+    us_net_default = asset_config.us_list_price * asset_config.us_net_share
 
     npv = 0.0
     peak_revenue = 0.0
     yearly_breakdown: list[YearlyBreakdown] = []
 
     for year in range(launch, launch + horizon):
+        # Resolve effective US net for this year (schedule > override > default)
+        if us_net_schedule is not None:
+            us_net = us_net_schedule.get(year, us_net_default)
+        elif us_net_override is not None:
+            us_net = us_net_override
+        else:
+            us_net = us_net_default
+
+        rebate_this_year = us_net_default - us_net  # 0 when no rebate applies
+
         us_vol = project_volume(us_base_volume, year, launch, peak, loe)
         us_rev = us_vol * us_net
 
@@ -154,6 +164,8 @@ def compute_npv(
                 ex_us_revenue=ex_us_rev,
                 total_revenue=total_rev,
                 g2n_used=g2n_used,
+                rebate_per_unit=rebate_this_year,
+                effective_us_net=us_net,
             )
         )
 

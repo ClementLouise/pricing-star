@@ -72,6 +72,8 @@ class YearlyBreakdown:
     ex_us_revenue: float
     total_revenue: float
     g2n_used: dict[str, float]              # country → g2n applied (for SOX audit trail)
+    rebate_per_unit: float = 0.0            # MFN rebate applied this year (0 if no regulation)
+    effective_us_net: float = 0.0           # us_net - rebate_per_unit (SOX audit trail)
 
 
 @dataclass
