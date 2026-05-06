@@ -94,6 +94,7 @@ class CountryDataRead(BaseModel):
     g2n_ratio: float | None
     g2n_time_series: dict | None
     updated_at: datetime
+    warning: dict | None = None
 
 
 # ─── Scenario ────────────────────────────────────────────────────────────────

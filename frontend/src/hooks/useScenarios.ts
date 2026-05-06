@@ -77,10 +77,13 @@ export function useCountryDataList(scenarioId: string) {
   });
 }
 
+const TRIAL_WARNING_DISMISSED_KEY = "trial_data_warning_dismissed";
+
 export function useUpsertCountryData(scenarioId: string) {
   const api = useApi();
   const qc = useQueryClient();
   const [conflict, setConflict] = useState<{ countryCode: string; payload: CountryDataInput } | null>(null);
+  const [trialWarning, setTrialWarning] = useState<{ code: string; message: string } | null>(null);
 
   const mutation = useMutation({
     mutationFn: ({ countryCode, payload }: { countryCode: string; payload: CountryDataInput }) => {
@@ -92,9 +95,13 @@ export function useUpsertCountryData(scenarioId: string) {
         expected_updated_at: payload.expected_updated_at ?? existing?.updated_at ?? null,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data: CountryData) => {
       qc.invalidateQueries({ queryKey: ["country-data", scenarioId] });
       setConflict(null);
+      // EC-TRIAL-01: show soft warning once per session
+      if (data.warning && !sessionStorage.getItem(TRIAL_WARNING_DISMISSED_KEY)) {
+        setTrialWarning(data.warning);
+      }
     },
     onError: (
       error: unknown,
@@ -120,7 +127,20 @@ export function useUpsertCountryData(scenarioId: string) {
     setConflict(null);
   }, [qc, scenarioId]);
 
-  return { ...mutation, conflict, forceOverwrite, reload, dismissConflict: () => setConflict(null) };
+  const dismissTrialWarning = useCallback(() => {
+    sessionStorage.setItem(TRIAL_WARNING_DISMISSED_KEY, "1");
+    setTrialWarning(null);
+  }, []);
+
+  return {
+    ...mutation,
+    conflict,
+    forceOverwrite,
+    reload,
+    dismissConflict: () => setConflict(null),
+    trialWarning,
+    dismissTrialWarning,
+  };
 }
 
 export function useDeleteCountryData(scenarioId: string) {

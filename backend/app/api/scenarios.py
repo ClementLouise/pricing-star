@@ -10,10 +10,12 @@ from app.database import get_db
 from app.models.asset import Asset
 from app.models.country_data import CountryData
 from app.models.scenario import Scenario
+from app.models.tenant import Tenant
 from app.models.user import User
 from app.repos.asset import AssetRepo
 from app.repos.audit import AuditRepo
 from app.repos.scenario import CountryDataRepo, ScenarioRepo
+from app.services.trial_heuristic import check_real_data_heuristic
 from app.schemas.scenario import (
     CountryDataInput,
     CountryDataRead,
@@ -291,7 +293,35 @@ async def upsert_country_data(
                 "after_state": payload.model_dump(exclude=_occ_excl),
             },
         )
-    return CountryDataRead.model_validate(cd)
+
+    response = CountryDataRead.model_validate(cd)
+
+    # EC-TRIAL-01: soft warning for trial tenants whose data looks like real pharma pricing
+    tenant = await db.get(Tenant, user.tenant_id)
+    if tenant and tenant.tier == "trial":
+        all_cd = await cd_repo.list_for_scenario(scenario_id)
+        result = check_real_data_heuristic(asset, all_cd)
+        if result.triggered:
+            response.warning = {
+                "code": "looks_like_real_data",
+                "message": (
+                    "This looks like real product pricing data. "
+                    "Trial mode is for illustrative use only."
+                ),
+            }
+            await AuditRepo(db).log(
+                tenant_id=user.tenant_id,
+                user_id=user.id,
+                action="trial.real_data_warning_triggered",
+                payload={
+                    "country_code": country_code.upper(),
+                    "list_price": float(asset.us_list_price) if asset and asset.us_list_price else None,
+                    "score": result.score,
+                    "breakdown": result.breakdown,
+                },
+            )
+
+    return response
 
 
 @router.delete("/scenarios/{scenario_id}/country-data/{country_code}", status_code=status.HTTP_204_NO_CONTENT)

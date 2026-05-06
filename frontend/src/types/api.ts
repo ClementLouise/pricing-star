@@ -62,6 +62,7 @@ export interface CountryData {
   g2n_ratio: number | null;
   g2n_time_series: Record<string, number> | null;
   updated_at: string;
+  warning?: { code: string; message: string } | null;
 }
 
 export interface GenerousConfig {
