@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.logging import get_logger
@@ -19,6 +20,19 @@ async def create_trial_tenant(
     tenant_repo = TenantRepo(db)
     user_repo = UserRepo(db)
     audit_repo = AuditRepo(db)
+
+    # EC-TRIAL-08: detect duplicate signups
+    existing_user = await user_repo.get_by_auth0_id(auth0_user_id)
+    if existing_user is not None:
+        existing_tenant = await tenant_repo.get_by_id(existing_user.tenant_id)
+        if existing_tenant is not None and existing_tenant.tier == "trial" and existing_tenant.status == "active":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="An account already exists for this email. Please sign in instead.",
+            )
+        # Expired or non-trial tenant: skip silently — user can still sign in
+        log.info("signup_duplicate_skipped", user_id=str(existing_user.id))
+        return
 
     company_name = f"{name}'s Team"
     tenant = await tenant_repo.create_trial(name=company_name)

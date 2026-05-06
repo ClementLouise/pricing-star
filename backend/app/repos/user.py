@@ -1,5 +1,6 @@
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
@@ -14,6 +15,12 @@ def _mask_email(email: str) -> str:
 class UserRepo:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
+
+    async def get_by_auth0_id(self, auth0_user_id: str) -> User | None:
+        result = await self._db.execute(
+            select(User).where(User.auth0_user_id == auth0_user_id)
+        )
+        return result.scalar_one_or_none()
 
     async def create(
         self,
