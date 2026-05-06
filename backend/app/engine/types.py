@@ -32,6 +32,7 @@ class CascadeResult:
     final: dict[str, float]                   # Final converged prices
     iterations: int                           # Iterations actually run
     history: list[dict[str, float]]           # Price snapshot per iteration
+    converged: bool = True                    # False if max_iterations reached without convergence
 
 
 @dataclass

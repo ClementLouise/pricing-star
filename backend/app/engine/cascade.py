@@ -67,11 +67,13 @@ def run_cascade(
             final=dict(initial_prices),
             iterations=0,
             history=[dict(initial_prices)],
+            converged=True,
         )
 
     current = dict(initial_prices)
     history: list[dict[str, float]] = [dict(current)]
 
+    converged_flag = False
     iterations_run = 0
     for i in range(max_iterations):
         next_prices = dict(current)
@@ -101,6 +103,7 @@ def run_cascade(
         iterations_run = i + 1
 
         if converged:
+            converged_flag = True
             break
 
-    return CascadeResult(final=current, iterations=iterations_run, history=history)
+    return CascadeResult(final=current, iterations=iterations_run, history=history, converged=converged_flag)

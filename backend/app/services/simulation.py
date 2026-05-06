@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from time import monotonic
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.engine.anchor import analyze_mfn_anchor
@@ -109,6 +110,7 @@ async def run_simulation(
     user: User,
     db: AsyncSession,
     levers: dict | None = None,
+    cascade_config: dict | None = None,
 ) -> SimulateResponse:
     """Full pipeline: cascade → Method I → NPV → persist → audit."""
     start = monotonic()
@@ -117,7 +119,6 @@ async def run_simulation(
     asset_config = _build_asset_config(asset)
     initial_prices = _build_engine_prices(country_rows)
     if not initial_prices:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No launched countries with list prices — cannot simulate",
@@ -128,7 +129,35 @@ async def run_simulation(
         initial_prices["US"] = float(asset.us_list_price)
 
     # F7-F8: IRP cascade
-    cascade_result = run_cascade(initial_prices)
+    cascade_cfg = cascade_config or {}
+    cascade_max_iterations = int(cascade_cfg.get("max_iterations", 5))
+    cascade_result = run_cascade(initial_prices, max_iterations=cascade_max_iterations, options=cascade_cfg)
+
+    # EC-CALC-01: only enforce strict convergence when explicitly requested via cascade_config.
+    # Default behavior matches V1.7: run up to max_iterations and use the result regardless.
+    if not cascade_result.converged and cascade_cfg.get("require_convergence", False):
+        audit_repo = AuditRepo(db)
+        await audit_repo.log(
+            tenant_id=asset.tenant_id,
+            user_id=user.id,
+            action="simulation.cascade_failed",
+            payload={
+                "scenario_id": str(scenario_id),
+                "iterations_run": cascade_result.iterations,
+                "max_iterations": cascade_max_iterations,
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "cascade_did_not_converge",
+                "message": (
+                    f"IRP cascade did not converge after {cascade_result.iterations} iterations. "
+                    "Increase max_iterations in cascade_config or review market price data."
+                ),
+            },
+        )
+
     cascaded_prices = cascade_result.final
 
     # F1/F3: Method I
@@ -195,7 +224,7 @@ async def run_simulation(
         per_unit_rebate=rebate_result.rebate_per_unit,
         effective_us_net=effective_us_net,
         cascade_iterations=cascade_result.iterations,
-        cascade_converged=cascade_result.iterations < 5,
+        cascade_converged=cascade_result.converged,
         final_prices={k: float(v) for k, v in cascaded_prices.items()},
         yearly_breakdown=[
             {

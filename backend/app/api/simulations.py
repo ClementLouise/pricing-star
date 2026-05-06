@@ -76,6 +76,7 @@ async def simulate(
         country_rows=country_rows,
         regulations=scenario.regulations,
         levers=scenario.levers,
+        cascade_config=scenario.cascade_config,
         user=user,
         db=db,
     )
