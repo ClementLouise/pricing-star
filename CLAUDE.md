@@ -233,6 +233,27 @@ Read the corresponding tab spec files in `docs/PRD_v2/07_TABS_SPEC/`. Each tab h
 
 ---
 
+## Backlog & deferred work
+
+This repository maintains a `BACKLOG.md` file at root tracking deferred
+work and post-launch improvements. Claude Code should:
+
+1. **Read BACKLOG.md at the start of every session** to know what deferred
+   work exists.
+2. **Suggest tackling backlog items** when context permits and the user
+   has bandwidth (e.g., between phases, after major milestones, when waiting
+   for external blockers).
+3. **Update BACKLOG.md** at end of session — add new P2 items identified,
+   move resolved items to Done with the commit hash.
+
+Hierarchy of priorities:
+- **P0** (in PRD `12_EDGE_CASES.md`) — must be done before launch
+- **P1** (in PRD or BACKLOG) — must be done before GA
+- **P2** (in BACKLOG) — polish post-launch, priorité par feedback
+- **Out of scope v2.0** — deferred to v3.0 entirely
+
+---
+
 ## Reference materials
 
 Located in `docs/reference/`:
