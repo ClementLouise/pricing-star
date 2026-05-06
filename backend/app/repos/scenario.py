@@ -64,7 +64,8 @@ class ScenarioRepo:
         return scenario
 
     async def update(self, scenario: Scenario, payload: ScenarioUpdate) -> Scenario:
-        data = payload.model_dump(exclude_none=True)
+        _occ = frozenset({"expected_updated_at", "force_override"})
+        data = payload.model_dump(exclude_none=True, exclude=_occ)
         if "regulations" in data:
             data["regulations"] = payload.regulations.model_dump()  # type: ignore[union-attr]
         if "levers" in data:
@@ -129,10 +130,12 @@ class CountryDataRepo:
         country_code: str,
         payload: CountryDataInput,
     ) -> CountryData:
+        _occ = frozenset({"expected_updated_at", "force_override"})
         existing = await self.get(scenario_id, country_code, tenant_id)
         if existing is not None:
-            for field, value in payload.model_dump().items():
+            for field, value in payload.model_dump(exclude=_occ).items():
                 setattr(existing, field, value)
+            existing.updated_at = datetime.now(timezone.utc)
             await self._db.flush()
             return existing
 
@@ -141,7 +144,8 @@ class CountryDataRepo:
             tenant_id=tenant_id,
             scenario_id=scenario_id,
             country_code=country_code,
-            **payload.model_dump(),
+            **{k: v for k, v in payload.model_dump().items() if k not in _occ},
+            updated_at=datetime.now(timezone.utc),
         )
         self._db.add(cd)
         await self._db.flush()

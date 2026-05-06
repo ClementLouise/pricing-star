@@ -56,7 +56,8 @@ class AssetRepo:
         return asset
 
     async def update(self, asset: Asset, payload: AssetUpdate) -> Asset:
-        for field, value in payload.model_dump(exclude_none=True).items():
+        _occ = frozenset({"expected_updated_at", "force_override"})
+        for field, value in payload.model_dump(exclude_none=True, exclude=_occ).items():
             setattr(asset, field, value)
         asset.updated_at = datetime.now(timezone.utc)
         await self._db.flush()

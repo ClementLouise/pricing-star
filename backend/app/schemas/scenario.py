@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, model_validator
 
+_OCC_EXCLUDE = frozenset({"expected_updated_at", "force_override"})
+
 
 # ─── Regulations ────────────────────────────────────────────────────────────
 
@@ -71,6 +73,13 @@ class CountryDataInput(BaseModel):
         return self
 
 
+class CountryDataUpsertPayload(CountryDataInput):
+    """CountryDataInput + OCC fields for PATCH endpoint (EC-UI-02)."""
+
+    expected_updated_at: datetime | None = None
+    force_override: bool = False
+
+
 class CountryDataRead(BaseModel):
     model_config = {"from_attributes": True}
 
@@ -84,6 +93,7 @@ class CountryDataRead(BaseModel):
     withdrawn: bool
     g2n_ratio: float | None
     g2n_time_series: dict | None
+    updated_at: datetime
 
 
 # ─── Scenario ────────────────────────────────────────────────────────────────
@@ -105,6 +115,8 @@ class ScenarioUpdate(BaseModel):
     regulations: RegulationsConfig | None = None
     levers: LeversConfig | None = None
     cascade_config: dict | None = None
+    expected_updated_at: datetime | None = None
+    force_override: bool = False
 
 
 class ScenarioRead(BaseModel):

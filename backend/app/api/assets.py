@@ -4,13 +4,36 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api._occ import check_occ
 from app.auth import require_role
 from app.database import get_db
+from app.models.asset import Asset
 from app.models.user import User
 from app.repos.asset import AssetRepo
 from app.repos.audit import AuditRepo
 from app.schemas.asset import AssetCreate, AssetDuplicate, AssetRead, AssetUpdate
 from app.schemas.common import Page
+
+
+def _asset_snapshot(asset: Asset) -> dict:
+    return {
+        "name": asset.name,
+        "therapeutic_area": asset.therapeutic_area,
+        "modality": asset.modality,
+        "indication": asset.indication,
+        "us_list_price": float(asset.us_list_price) if asset.us_list_price is not None else None,
+        "us_net_share": float(asset.us_net_share) if asset.us_net_share is not None else None,
+        "launch_year": asset.launch_year,
+        "peak_year": asset.peak_year,
+        "loe_year": asset.loe_year,
+        "cogs_percent": float(asset.cogs_percent),
+        "discount_rate": float(asset.discount_rate),
+        "us_patient_population": asset.us_patient_population,
+        "ex_us_patient_population": asset.ex_us_patient_population,
+        "peak_capture_rate": float(asset.peak_capture_rate),
+        "part_b_share": float(asset.part_b_share),
+        "ramp_years": asset.ramp_years,
+    }
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -72,13 +95,34 @@ async def update_asset(
     asset = await repo.get(asset_id, user.tenant_id)
     if asset is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+
+    is_force_conflict = check_occ(asset.updated_at, payload.expected_updated_at, payload.force_override)
+    before_snapshot = _asset_snapshot(asset) if is_force_conflict else None
+    conflicting_ts = asset.updated_at.isoformat() if is_force_conflict else None
+
     asset = await repo.update(asset, payload)
-    await AuditRepo(db).log(
-        tenant_id=user.tenant_id,
-        user_id=user.id,
-        action="asset.update",
-        payload={"asset_id": str(asset_id)},
-    )
+
+    if is_force_conflict:
+        _occ_excl = frozenset({"expected_updated_at", "force_override"})
+        await AuditRepo(db).log(
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+            action="asset.force_overwrite_conflict",
+            payload={
+                "asset_id": str(asset_id),
+                "conflicting_updated_at": conflicting_ts,
+                "client_expected_at": payload.expected_updated_at.isoformat() if payload.expected_updated_at else None,
+                "before_state": before_snapshot,
+                "after_state": payload.model_dump(exclude_none=True, exclude=_occ_excl),
+            },
+        )
+    else:
+        await AuditRepo(db).log(
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+            action="asset.update",
+            payload={"asset_id": str(asset_id)},
+        )
     return AssetRead.model_validate(asset)
 
 

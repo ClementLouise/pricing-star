@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, model_validator
 
+_OCC_EXCLUDE = frozenset({"expected_updated_at", "force_override"})
+
 
 class AssetCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
@@ -51,6 +53,8 @@ class AssetUpdate(BaseModel):
     peak_capture_rate: float | None = Field(None, ge=0, le=1)
     part_b_share: float | None = Field(None, ge=0, le=1)
     ramp_years: int | None = Field(None, ge=1, le=15)
+    expected_updated_at: datetime | None = None
+    force_override: bool = False
 
 
 class AssetRead(BaseModel):

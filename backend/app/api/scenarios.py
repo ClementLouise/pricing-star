@@ -4,9 +4,12 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api._occ import check_occ
 from app.auth import require_role
 from app.database import get_db
 from app.models.asset import Asset
+from app.models.country_data import CountryData
+from app.models.scenario import Scenario
 from app.models.user import User
 from app.repos.asset import AssetRepo
 from app.repos.audit import AuditRepo
@@ -14,11 +17,36 @@ from app.repos.scenario import CountryDataRepo, ScenarioRepo
 from app.schemas.scenario import (
     CountryDataInput,
     CountryDataRead,
+    CountryDataUpsertPayload,
     ScenarioCreate,
     ScenarioDuplicate,
     ScenarioRead,
     ScenarioUpdate,
 )
+
+
+def _scenario_snapshot(scenario: Scenario) -> dict:
+    return {
+        "name": scenario.name,
+        "description": scenario.description,
+        "is_baseline": scenario.is_baseline,
+        "regulations": scenario.regulations,
+        "levers": scenario.levers,
+        "cascade_config": scenario.cascade_config,
+    }
+
+
+def _country_data_snapshot(cd: CountryData) -> dict:
+    return {
+        "list_price": float(cd.list_price) if cd.list_price is not None else None,
+        "net_price": float(cd.net_price) if cd.net_price is not None else None,
+        "volume": float(cd.volume) if cd.volume is not None else None,
+        "launched": cd.launched,
+        "launch_year": cd.launch_year,
+        "withdrawn": cd.withdrawn,
+        "g2n_ratio": float(cd.g2n_ratio) if cd.g2n_ratio is not None else None,
+        "g2n_time_series": cd.g2n_time_series,
+    }
 
 
 def _assert_g2n_lifecycle(g2n_time_series: dict[str, float] | None, asset: Asset) -> None:
@@ -114,13 +142,34 @@ async def update_scenario(
     scenario = await repo.get(scenario_id, user.tenant_id)
     if scenario is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenario not found")
+
+    is_force_conflict = check_occ(scenario.updated_at, payload.expected_updated_at, payload.force_override)
+    before_snapshot = _scenario_snapshot(scenario) if is_force_conflict else None
+    conflicting_ts = scenario.updated_at.isoformat() if is_force_conflict else None
+
     scenario = await repo.update(scenario, payload)
-    await AuditRepo(db).log(
-        tenant_id=user.tenant_id,
-        user_id=user.id,
-        action="scenario.update",
-        payload={"scenario_id": str(scenario_id)},
-    )
+
+    if is_force_conflict:
+        _occ_excl = frozenset({"expected_updated_at", "force_override"})
+        await AuditRepo(db).log(
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+            action="scenario.force_overwrite_conflict",
+            payload={
+                "scenario_id": str(scenario_id),
+                "conflicting_updated_at": conflicting_ts,
+                "client_expected_at": payload.expected_updated_at.isoformat() if payload.expected_updated_at else None,
+                "before_state": before_snapshot,
+                "after_state": payload.model_dump(exclude_none=True, exclude=_occ_excl),
+            },
+        )
+    else:
+        await AuditRepo(db).log(
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+            action="scenario.update",
+            payload={"scenario_id": str(scenario_id)},
+        )
     return ScenarioRead.model_validate(scenario)
 
 
@@ -200,7 +249,7 @@ async def list_country_data(
 async def upsert_country_data(
     scenario_id: uuid.UUID,
     country_code: str,
-    payload: CountryDataInput,
+    payload: CountryDataUpsertPayload,
     user: User = Depends(_editor),
     db: AsyncSession = Depends(get_db),
 ) -> CountryDataRead:
@@ -210,7 +259,38 @@ async def upsert_country_data(
     asset = await AssetRepo(db).get(scenario.asset_id, user.tenant_id)
     if asset is not None:
         _assert_g2n_lifecycle(payload.g2n_time_series, asset)
-    cd = await CountryDataRepo(db).upsert(scenario_id, user.tenant_id, country_code.upper(), payload)
+
+    cd_repo = CountryDataRepo(db)
+    existing_cd = await cd_repo.get(scenario_id, country_code.upper(), user.tenant_id)
+
+    is_force_conflict = False
+    before_snapshot: dict | None = None
+    conflicting_ts: str | None = None
+    if existing_cd is not None:
+        is_force_conflict = check_occ(
+            existing_cd.updated_at, payload.expected_updated_at, payload.force_override
+        )
+        if is_force_conflict:
+            before_snapshot = _country_data_snapshot(existing_cd)
+            conflicting_ts = existing_cd.updated_at.isoformat()
+
+    cd = await cd_repo.upsert(scenario_id, user.tenant_id, country_code.upper(), payload)
+
+    if is_force_conflict:
+        _occ_excl = frozenset({"expected_updated_at", "force_override"})
+        await AuditRepo(db).log(
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+            action="country_data.force_overwrite_conflict",
+            payload={
+                "scenario_id": str(scenario_id),
+                "country_code": country_code.upper(),
+                "conflicting_updated_at": conflicting_ts,
+                "client_expected_at": payload.expected_updated_at.isoformat() if payload.expected_updated_at else None,
+                "before_state": before_snapshot,
+                "after_state": payload.model_dump(exclude=_occ_excl),
+            },
+        )
     return CountryDataRead.model_validate(cd)
 
 
