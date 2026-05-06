@@ -46,8 +46,8 @@ class LeversConfig(BaseModel):
 # ─── CountryData ─────────────────────────────────────────────────────────────
 
 class CountryDataInput(BaseModel):
-    list_price: float | None = Field(None, ge=0)
-    net_price: float | None = Field(None, ge=0)
+    list_price: float | None = Field(None, gt=0)
+    net_price: float | None = Field(None, gt=0)
     volume: float | None = Field(None, ge=0, le=1)
     launched: bool = False
     launch_year: int | None = None
