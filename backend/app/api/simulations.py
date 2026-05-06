@@ -1,7 +1,9 @@
 """Simulation execution endpoints — per PRD §05."""
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import require_role
@@ -25,6 +27,9 @@ from app.schemas.simulation import (
     SimulationSummary,
     YearlyBreakdownItem,
 )
+from app.engine.audit import generate_audit_json
+from app.engine.types import NPVResult, YearlyBreakdown
+from app.repos.audit import AuditRepo
 from app.services.optimizer import generate_optimizer_result
 from app.services.simulation import (
     compute_anchor_analysis,
@@ -319,3 +324,68 @@ async def compare_scenarios(
         ))
 
     return ScenarioCompareResult(items=items)
+
+
+@router.post("/simulations/{simulation_id}/audit-export")
+async def export_audit_json(
+    simulation_id: uuid.UUID,
+    user: User = Depends(_viewer),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """EC-COMP-03: Export SOX-grade audit JSON for a simulation result."""
+    sim = await SimulationResultRepo(db).get(simulation_id, user.tenant_id)
+    if sim is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Simulation not found")
+
+    scenario = await ScenarioRepo(db).get(sim.scenario_id, user.tenant_id)
+    asset = await AssetRepo(db).get(scenario.asset_id, user.tenant_id) if scenario else None
+
+    npv_result = NPVResult(
+        npv=float(sim.npv),
+        peak_revenue=float(sim.peak_revenue) if sim.peak_revenue is not None else 0.0,
+        yearly_breakdown=[
+            YearlyBreakdown(
+                year=row["year"],
+                us_revenue=row["us_revenue"],
+                ex_us_revenue=row["ex_us_revenue"],
+                total_revenue=row.get("total_net", row["us_revenue"] + row["ex_us_revenue"]),
+                g2n_used={},
+                rebate_per_unit=row.get("rebate_per_unit", 0.0),
+                effective_us_net=row.get("effective_us_net", 0.0),
+            )
+            for row in (sim.yearly_breakdown or [])
+        ],
+    )
+
+    asset_dict = {
+        "name": asset.name if asset else "unknown",
+        "therapeutic_area": asset.therapeutic_area if asset else None,
+        "modality": asset.modality if asset else None,
+        "launch_year": asset.launch_year if asset else None,
+        "patent_expiry": asset.loe_year if asset else None,
+        "discount_rate": float(asset.discount_rate) if asset else None,
+    }
+
+    audit_doc = generate_audit_json(
+        asset=asset_dict,
+        scenario=scenario.name if scenario else None,
+        prices=sim.final_prices or {},
+        regulations=scenario.regulations if scenario else {},
+        npv_result=npv_result,
+        anchor_analysis=None,
+        generated_by=str(user.id),
+    )
+
+    await AuditRepo(db).log(
+        tenant_id=user.tenant_id,
+        user_id=user.id,
+        action="simulation.audit_exported",
+        payload={"simulation_id": str(simulation_id)},
+    )
+
+    asset_name = (asset.name if asset else "unknown").replace(" ", "_")
+    filename = f"pricing-star_audit_{asset_name}_{date.today().isoformat()}.json"
+    return JSONResponse(
+        content=audit_doc,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
