@@ -114,23 +114,23 @@ export function CascadeTab({ scenario }: CascadeTabProps) {
         </div>
 
         {simulation && (
-          <div className="mt-3 grid grid-cols-3 gap-4 text-xs text-text-secondary">
-            <div>
-              <span className="text-text-tertiary">Markets with prices:</span>{" "}
-              <span className="text-text-primary">{Object.keys(simulation.final_prices).length}</span>
+          <div className="mt-3 grid grid-cols-3 gap-4 text-xs">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">Markets with prices</span>
+              <span className="font-mono tabular-nums text-text-primary">{Object.keys(simulation.final_prices).length}</span>
             </div>
-            <div>
-              <span className="text-text-tertiary">Method I anchor:</span>{" "}
-              <span className="text-text-primary">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">Method I anchor</span>
+              <span className="font-mono text-text-primary">
                 {simulation.method_i_anchor ?? "—"}{" "}
                 {simulation.method_i_value != null && (
-                  <span>({formatCurrency(simulation.method_i_value, { compact: true })})</span>
+                  <span className="text-text-secondary tabular-nums">({formatCurrency(simulation.method_i_value, { compact: true })})</span>
                 )}
               </span>
             </div>
-            <div>
-              <span className="text-text-tertiary">NPV (14-year):</span>{" "}
-              <span className="text-text-primary font-semibold">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">NPV (14-year)</span>
+              <span className="font-mono font-medium tabular-nums text-text-primary">
                 {simulation.npv != null ? formatCurrency(simulation.npv, { compact: true }) : "—"}
               </span>
             </div>

@@ -117,25 +117,32 @@ export default function AssetDetailPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between mb-4">
-        <nav className="text-xs text-text-tertiary flex items-center gap-2">
-          <button onClick={() => navigate("/assets")} className="hover:text-text-secondary transition-colors">
-            Assets
-          </button>
-          <span>/</span>
-          <span className="text-text-primary">{asset.name}</span>
-          {activeScenario && (
-            <>
-              <span>/</span>
-              <button
-                onClick={() => setScenarioPickerOpen(true)}
-                className="text-text-secondary hover:text-text-primary transition-colors"
-              >
-                {activeScenario.name}
-              </button>
-            </>
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-border/60">
+        <div>
+          <nav className="font-mono text-xs text-text-tertiary flex items-center gap-1.5">
+            <button onClick={() => navigate("/assets")} className="hover:text-text-secondary transition-colors">
+              Assets
+            </button>
+            <span className="text-text-tertiary/50">·</span>
+            <span className="text-text-primary font-medium">{asset.name}</span>
+            {activeScenario && (
+              <>
+                <span className="text-text-tertiary/50">·</span>
+                <button
+                  onClick={() => setScenarioPickerOpen(true)}
+                  className="text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  {activeScenario.name}
+                </button>
+              </>
+            )}
+          </nav>
+          {(asset.indication ?? asset.modality) && (
+            <p className="text-xs text-text-tertiary mt-0.5 pl-0.5">
+              {[asset.indication, asset.modality].filter(Boolean).join(" · ")}
+            </p>
           )}
-        </nav>
+        </div>
         <div className="flex items-center gap-2">
           {scenarioOptions.length > 0 && (
             <Select

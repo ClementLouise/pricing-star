@@ -77,7 +77,7 @@ export function DataTable<T>({
               <th
                 key={col.key}
                 className={[
-                  "px-3 py-2 text-xs font-medium text-text-tertiary uppercase tracking-wide",
+                  "px-3 py-2 font-mono text-[10px] text-text-tertiary uppercase tracking-widest",
                   col.sortable ? "cursor-pointer hover:text-text-secondary select-none" : "",
                   alignClasses[col.align ?? "left"],
                 ].join(" ")}
@@ -108,13 +108,23 @@ export function DataTable<T>({
                 ].join(" ")}
                 onClick={() => onRowClick?.(row)}
               >
-                {columns.map((col) => (
-                  <td key={col.key} className={["px-3 py-2 text-text-primary", alignClasses[col.align ?? "left"]].join(" ")}>
-                    {col.render
-                      ? col.render(row[col.key as keyof T] as T[keyof T & string], row)
-                      : formatCell((row as Record<string, unknown>)[col.key], col.format ?? "text")}
-                  </td>
-                ))}
+                {columns.map((col) => {
+                  const isNumeric = !col.render && ["currency", "percent", "number", "integer"].includes(col.format ?? "text");
+                  return (
+                    <td
+                      key={col.key}
+                      className={[
+                        "px-3 py-2 text-text-primary",
+                        alignClasses[col.align ?? "left"],
+                        isNumeric ? "font-mono tabular-nums" : "",
+                      ].filter(Boolean).join(" ")}
+                    >
+                      {col.render
+                        ? col.render(row[col.key as keyof T] as T[keyof T & string], row)
+                        : formatCell((row as Record<string, unknown>)[col.key], col.format ?? "text")}
+                    </td>
+                  );
+                })}
               </tr>
             ))
           )}
