@@ -15,7 +15,7 @@ export default function App() {
   return (
     <ToastProvider>
       <Routes>
-        <Route element={<AuthGuard />}>
+<Route element={<AuthGuard />}>
           <Route path="/" element={<AssetListPage />} />
           <Route path="/assets" element={<AssetListPage />} />
           <Route path="/assets/:assetId" element={<AssetDetailPage />} />

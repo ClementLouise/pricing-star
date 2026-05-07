@@ -7,6 +7,7 @@ import { Panel } from "@/components/ui/Panel";
 import { Slider } from "@/components/ui/Slider";
 import { countryFlag, COUNTRY_MAP } from "@/lib/countries";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useDECascade } from "@/hooks/useSimulation";
 import type { MarketImpact, Scenario } from "@/types/api";
 
@@ -92,6 +93,7 @@ export function DECascadeTab({ scenario }: DECascadeTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="de-cascade" {...TAB_EXPLAINER_CONTENT["de-cascade"]} />
       <h2 className="text-sm font-semibold text-text-primary">DE Cascade Trap Simulator</h2>
       <p className="text-xs text-text-secondary">
         Simulates the impact of disclosing the confidential German net price under the Medical Research Act

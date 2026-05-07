@@ -14,6 +14,7 @@ import { COUNTRY_MAP, countryFlag } from "@/lib/countries";
 import { formatCurrency } from "@/lib/formatters";
 import { useScenarioList } from "@/hooks/useScenarios";
 import { useCompareScenarios } from "@/hooks/useSimulation";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useAppStore } from "@/store";
 import type { ScenarioCompareItem, Scenario } from "@/types/api";
 
@@ -143,6 +144,7 @@ export function CompareTab({ scenario }: CompareTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="compare" {...TAB_EXPLAINER_CONTENT.compare} />
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">Compare Scenarios</h2>
         <div className="flex items-center gap-2">

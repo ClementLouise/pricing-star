@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/lib/formatters";
 import { useUpdateScenario } from "@/hooks/useScenarios";
 import { useMonteCarlo, useOptimize, useRunSimulation } from "@/hooks/useSimulation";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useAppStore } from "@/store";
 import type { LeversConfig, OptimizerRecommendation, Scenario } from "@/types/api";
 
@@ -162,6 +163,7 @@ export function OptimizerTab({ scenario }: OptimizerTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="optimizer" {...TAB_EXPLAINER_CONTENT.optimizer} />
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">NPV Optimizer</h2>
         <div className="flex items-center gap-2">

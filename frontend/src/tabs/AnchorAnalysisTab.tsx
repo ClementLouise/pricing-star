@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { KPICard } from "@/components/ui/KPICard";
 import { Panel } from "@/components/ui/Panel";
 import { Pill } from "@/components/ui/Pill";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useToast } from "@/components/ui/Toast";
 import { countryFlag, COUNTRY_MAP } from "@/lib/countries";
 import { formatCurrency, formatPercent } from "@/lib/formatters";
@@ -115,6 +116,7 @@ export function AnchorAnalysisTab({ scenario }: AnchorAnalysisTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="anchor" {...TAB_EXPLAINER_CONTENT.anchor} />
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">MFN Anchor Analysis</h2>
         <div className="flex items-center gap-1 bg-panel-elev border border-border rounded p-0.5">

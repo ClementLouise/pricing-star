@@ -13,6 +13,7 @@ import { countryFlag, COUNTRY_MAP } from "@/lib/countries";
 import { formatCurrency } from "@/lib/formatters";
 import { useCountryDataList, useUpdateScenario } from "@/hooks/useScenarios";
 import { useRunSimulation } from "@/hooks/useSimulation";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useAppStore } from "@/store";
 import type { LeversConfig, Scenario } from "@/types/api";
 
@@ -84,6 +85,7 @@ export function LeversTab({ scenario }: LeversTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="levers" {...TAB_EXPLAINER_CONTENT.levers} />
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">Strategic Levers</h2>
         <Button

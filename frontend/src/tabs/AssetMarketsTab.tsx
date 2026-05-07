@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -344,6 +345,7 @@ export function AssetMarketsTab({ asset, scenario }: AssetMarketsTabProps) {
   if (!scenario) {
     return (
       <div className="flex flex-col gap-4">
+        <TabExplainer tabId="asset" {...TAB_EXPLAINER_CONTENT.asset} />
         <AssetForm asset={asset} scenarioId="" />
         <Panel>
           <EmptyState
@@ -362,6 +364,7 @@ export function AssetMarketsTab({ asset, scenario }: AssetMarketsTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="asset" {...TAB_EXPLAINER_CONTENT.asset} />
       <AssetForm asset={asset} scenarioId={scenario.id} />
 
       <Panel>

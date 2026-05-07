@@ -14,6 +14,7 @@ import { countryFlag, COUNTRY_MAP } from "@/lib/countries";
 import { formatCurrency } from "@/lib/formatters";
 import { useCountryDataList, useUpsertCountryData } from "@/hooks/useScenarios";
 import { useRunSimulation } from "@/hooks/useSimulation";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useAppStore } from "@/store";
 import type { CountryData, Scenario } from "@/types/api";
 
@@ -236,6 +237,7 @@ export function RebatesTab({ scenario }: RebatesTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="rebates" {...TAB_EXPLAINER_CONTENT.rebates} />
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">Rebates & G2N</h2>
         <Button

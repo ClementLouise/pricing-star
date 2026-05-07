@@ -9,6 +9,7 @@ import { Toggle } from "@/components/ui/Toggle";
 import { useToast } from "@/components/ui/Toast";
 import { useUpdateScenario } from "@/hooks/useScenarios";
 import { useRunSimulation } from "@/hooks/useSimulation";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useAppStore } from "@/store";
 import type { GenerousConfig, GlobeConfig, GuardConfig, RegulationsConfig, Scenario } from "@/types/api";
 
@@ -227,6 +228,7 @@ export function RegulationsTab({ scenario }: RegulationsTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="regulations" {...TAB_EXPLAINER_CONTENT.regulations} />
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-text-primary">Regulatory Scenario</h2>
         <div className="flex items-center gap-2">

@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { COUNTRY_MAP } from "@/lib/countries";
 import { formatCurrency } from "@/lib/formatters";
 import { useRunSimulation } from "@/hooks/useSimulation";
+import { TabExplainer, TAB_EXPLAINER_CONTENT } from "@/components/TabExplainer";
 import { useAppStore } from "@/store";
 import type { Scenario } from "@/types/api";
 
@@ -84,6 +85,7 @@ export function CascadeTab({ scenario }: CascadeTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <TabExplainer tabId="cascade" {...TAB_EXPLAINER_CONTENT.cascade} />
       {/* Controls */}
       <Panel>
         <div className="flex items-center justify-between">
