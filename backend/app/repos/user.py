@@ -36,7 +36,14 @@ class UserRepo:
             email_masked=_mask_email(email),
             name=name,
             role="admin",  # first user of a trial tenant is admin
+            has_seen_welcome=False,
         )
         self._db.add(user)
         await self._db.flush()
         return user
+
+    async def mark_welcome_seen(self, user_id: uuid.UUID) -> None:
+        user = await self._db.get(User, user_id)
+        if user and not user.has_seen_welcome:
+            user.has_seen_welcome = True
+            await self._db.flush()

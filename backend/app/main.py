@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.api_keys import router as api_keys_router
 from app.api.assets import router as assets_router
+from app.api.users import router as users_router
 from app.api.audit_logs import router as audit_logs_router
 from app.api.reference import router as reference_router
 from app.api.scenarios import router as scenarios_router
@@ -55,6 +56,7 @@ app.include_router(scenarios_router, prefix=_API)
 app.include_router(simulations_router, prefix=_API)
 app.include_router(reference_router, prefix=_API)
 app.include_router(audit_logs_router, prefix=_API)
+app.include_router(users_router, prefix=_API)
 
 
 @app.on_event("startup")

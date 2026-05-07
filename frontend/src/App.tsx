@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import AssetDetailPage from "@/pages/AssetDetailPage";
 import AssetListPage from "@/pages/AssetListPage";
 import Loading from "@/pages/Loading";
+import WelcomePage from "@/pages/WelcomePage";
 
 export default function App() {
   const { isLoading } = useAuth0();
@@ -15,7 +16,8 @@ export default function App() {
   return (
     <ToastProvider>
       <Routes>
-<Route element={<AuthGuard />}>
+        <Route element={<AuthGuard />}>
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/" element={<AssetListPage />} />
           <Route path="/assets" element={<AssetListPage />} />
           <Route path="/assets/:assetId" element={<AssetDetailPage />} />
