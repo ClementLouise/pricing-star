@@ -38,8 +38,8 @@ export default {
         'info-light': '#E3F2FD',
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', '"Helvetica Neue"', 'Arial', 'sans-serif'],
-        mono: ['"SF Mono"', '"Monaco"', '"Inconsolata"', '"Fira Code"', 'monospace'],
+        sans: ['"IBM Plex Sans"', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', '"SF Mono"', '"Monaco"', '"Inconsolata"', 'monospace'],
       },
       fontSize: {
         xs: ['0.75rem', { lineHeight: '1.2' }],
@@ -49,6 +49,20 @@ export default {
         xl: ['1.25rem', { lineHeight: '1.4' }],
         '2xl': ['1.5rem', { lineHeight: '1.2' }],
         '3xl': ['1.875rem', { lineHeight: '1.2' }],
+        '4xl': ['2.25rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        '5xl': ['3rem', { lineHeight: '1.05', letterSpacing: '-0.025em' }],
+        // Numeric display — always pair with font-mono
+        'display-num-sm': ['1.5rem', { lineHeight: '1', letterSpacing: '-0.015em' }],
+        'display-num-md': ['1.875rem', { lineHeight: '1', letterSpacing: '-0.02em' }],
+        'display-num-lg': ['2.5rem', { lineHeight: '1', letterSpacing: '-0.025em' }],
+      },
+      letterSpacing: {
+        tighter: '-0.03em',
+        tight: '-0.015em',
+        normal: '0',
+        wide: '0.04em',
+        wider: '0.08em',
+        widest: '0.12em',
       },
       borderRadius: {
         none: '0',
@@ -80,9 +94,13 @@ export default {
         '12': '96px',
       },
       transitionDuration: {
-        fast: '150ms',
+        fast: '120ms',
+        base: '180ms',
         DEFAULT: '250ms',
-        slow: '400ms',
+        slow: '280ms',
+      },
+      transitionTimingFunction: {
+        'out-soft': 'cubic-bezier(0.32, 0.72, 0, 1)',
       },
     },
   },
