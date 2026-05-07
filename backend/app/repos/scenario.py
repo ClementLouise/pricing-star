@@ -42,6 +42,19 @@ class ScenarioRepo:
         )
         return result.scalar_one_or_none()
 
+    async def list_all_for_tenant(
+        self,
+        tenant_id: uuid.UUID,
+    ) -> list[Scenario]:
+        """Return all non-archived scenarios for a tenant (used by GDPR export)."""
+        result = await self._db.execute(
+            select(Scenario).where(
+                Scenario.tenant_id == tenant_id,
+                Scenario.archived_at.is_(None),
+            ).order_by(Scenario.created_at.desc())
+        )
+        return list(result.scalars().all())
+
     async def create(
         self,
         asset_id: uuid.UUID,

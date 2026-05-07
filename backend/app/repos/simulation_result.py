@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.scenario import Scenario
 from app.models.simulation_result import SimulationResult
 
 
@@ -41,3 +42,32 @@ class SimulationResultRepo:
         self._db.add(record)
         await self._db.flush()
         return record
+
+    async def list_for_asset(
+        self,
+        asset_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+    ) -> list[SimulationResult]:
+        """Return all simulations across all scenarios for an asset, newest first."""
+        result = await self._db.execute(
+            select(SimulationResult)
+            .join(Scenario, SimulationResult.scenario_id == Scenario.id)
+            .where(
+                Scenario.asset_id == asset_id,
+                SimulationResult.tenant_id == tenant_id,
+            )
+            .order_by(SimulationResult.computed_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def list_all_for_tenant(
+        self,
+        tenant_id: uuid.UUID,
+    ) -> list[SimulationResult]:
+        """Return all simulations for a tenant (used by GDPR export)."""
+        result = await self._db.execute(
+            select(SimulationResult)
+            .where(SimulationResult.tenant_id == tenant_id)
+            .order_by(SimulationResult.computed_at.desc())
+        )
+        return list(result.scalars().all())

@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import AssetDetailPage from "@/pages/AssetDetailPage";
 import AssetListPage from "@/pages/AssetListPage";
 import Loading from "@/pages/Loading";
+import MyDataPage from "@/pages/MyDataPage";
 import WelcomePage from "@/pages/WelcomePage";
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
       <Routes>
         <Route element={<AuthGuard />}>
           <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/settings/my-data" element={<MyDataPage />} />
           <Route path="/" element={<AssetListPage />} />
           <Route path="/assets" element={<AssetListPage />} />
           <Route path="/assets/:assetId" element={<AssetDetailPage />} />

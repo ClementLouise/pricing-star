@@ -70,6 +70,15 @@ class AssetRepo:
         await self._db.flush()
         return asset
 
+    async def list_all(self, tenant_id: uuid.UUID) -> list[Asset]:
+        """Return all non-archived assets without pagination (used by GDPR export)."""
+        result = await self._db.execute(
+            select(Asset)
+            .where(Asset.tenant_id == tenant_id, Asset.archived_at.is_(None))
+            .order_by(Asset.created_at.desc())
+        )
+        return list(result.scalars().all())
+
     async def duplicate(
         self, asset: Asset, new_name: str, user_id: uuid.UUID
     ) -> Asset:

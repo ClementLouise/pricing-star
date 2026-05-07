@@ -58,6 +58,12 @@ function UserMenu() {
           >
             Revoir l'introduction
           </button>
+          <button
+            onClick={() => { navigate("/settings/my-data"); setOpen(false); }}
+            className="w-full text-left px-4 py-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-panel-elev transition-colors"
+          >
+            Mes données
+          </button>
           <div className="border-t border-border" />
           <button
             onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}

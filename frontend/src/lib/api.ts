@@ -56,6 +56,21 @@ async function call<T>(
   return res.json() as Promise<T>;
 }
 
+async function download(
+  getToken: () => Promise<string>,
+  path: string,
+): Promise<Blob> {
+  const token = await getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null) as { detail?: string } | null;
+    throw new ApiError(res.status, body?.detail ?? res.statusText);
+  }
+  return res.blob();
+}
+
 export function useApi() {
   const { getAccessTokenSilently } = useAuth0();
   const tok = useCallback(() => getAccessTokenSilently(), [getAccessTokenSilently]);
@@ -138,6 +153,18 @@ export function useApi() {
           method: "POST",
           body: JSON.stringify({ scenario_ids: scenarioIds }),
         }),
+      downloadAuditPack: (simulationId: string) =>
+        download(tok, `/simulations/${simulationId}/audit-pack`),
+    },
+
+    auditPack: {
+      downloadForAsset: (assetId: string) =>
+        download(tok, `/assets/${assetId}/audit-pack`),
+    },
+
+    exports: {
+      myData: () => download(tok, `/export/my-data`),
+      tenantPack: () => download(tok, `/export/tenant-pack`),
     },
   };
 }

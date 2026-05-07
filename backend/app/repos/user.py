@@ -42,6 +42,12 @@ class UserRepo:
         await self._db.flush()
         return user
 
+    async def list_for_tenant(self, tenant_id: uuid.UUID) -> list[User]:
+        result = await self._db.execute(
+            select(User).where(User.tenant_id == tenant_id)
+        )
+        return list(result.scalars().all())
+
     async def mark_welcome_seen(self, user_id: uuid.UUID) -> None:
         user = await self._db.get(User, user_id)
         if user and not user.has_seen_welcome:

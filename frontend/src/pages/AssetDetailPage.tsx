@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
@@ -8,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { AppShell } from "@/components/layout/AppShell";
 import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/api";
 import { useAsset } from "@/hooks/useAssets";
 import { useScenarioList, useCreateScenario } from "@/hooks/useScenarios";
 import { useAppStore } from "@/store";
@@ -38,8 +40,10 @@ export default function AssetDetailPage() {
   const activeScenario = useAppStore((s) => s.activeScenario);
   const activeTab = useAppStore((s) => s.activeTab);
 
+  const api = useApi();
   const [scenarioPickerOpen, setScenarioPickerOpen] = useState(false);
   const [newScenarioName, setNewScenarioName] = useState("");
+  const [downloadingPack, setDownloadingPack] = useState(false);
   const createScenario = useCreateScenario(assetId ?? "");
 
   // Sync asset to store
@@ -55,6 +59,25 @@ export default function AssetDetailPage() {
       : scenarios[0];
     if (target) setActiveScenario(target);
   }, [scenarios, routeScenarioId, setActiveScenario]);
+
+  async function handleDownloadAssetPack() {
+    if (!assetId) return;
+    setDownloadingPack(true);
+    try {
+      const blob = await api.auditPack.downloadForAsset(assetId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pricingstar_${(asset?.name ?? assetId).replace(/ /g, "_")}_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Asset Audit Pack downloaded");
+    } catch {
+      toast.error("No simulations found — run at least one simulation first");
+    } finally {
+      setDownloadingPack(false);
+    }
+  }
 
   async function handleCreateScenario() {
     if (!newScenarioName.trim()) return;
@@ -125,6 +148,14 @@ export default function AssetDetailPage() {
               }}
             />
           )}
+          <Button
+            size="sm"
+            variant="ghost"
+            loading={downloadingPack}
+            onClick={handleDownloadAssetPack}
+          >
+            Download Asset Pack
+          </Button>
           <Button size="sm" variant="secondary" onClick={() => setScenarioPickerOpen(true)}>
             New scenario
           </Button>
