@@ -5,6 +5,7 @@ interface PanelProps {
   padding?: "none" | "sm" | "md" | "lg";
   elevated?: boolean;
   bordered?: boolean;
+  interactive?: boolean;
   className?: string;
 }
 
@@ -20,14 +21,16 @@ export function Panel({
   padding = "md",
   elevated = false,
   bordered = true,
+  interactive = false,
   className = "",
 }: PanelProps) {
   return (
     <div
       className={[
-        "rounded-md",
+        "rounded-lg",
         elevated ? "bg-panel-elev" : "bg-panel",
         bordered ? "border border-border" : "",
+        interactive ? "hover:border-navy-700 transition-colors duration-base cursor-pointer" : "",
         paddingClasses[padding],
         className,
       ]

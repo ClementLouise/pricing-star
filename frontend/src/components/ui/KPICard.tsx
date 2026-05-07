@@ -38,18 +38,18 @@ export function KPICard({
   sublabel,
   loading = false,
 }: KPICardProps) {
-  const deltaSign = delta != null && delta > 0 ? "↑" : "↓";
+  const deltaSign = delta != null && delta > 0 ? "▲" : "▼";
 
   return (
-    <div className="flex flex-col gap-1 p-3 rounded-md bg-panel border border-border">
-      <p className="text-xs font-medium text-text-tertiary uppercase tracking-widest">{label}</p>
+    <div className="flex flex-col gap-1 px-4 py-3 rounded-md bg-panel border border-border">
+      <p className="font-mono text-xs uppercase tracking-wider text-text-secondary">{label}</p>
       {loading ? (
         <div className="h-8 w-24 animate-pulse bg-panel-elev rounded" />
       ) : (
-        <p className="text-2xl font-semibold text-text-primary tabular-nums">{render(value, format, precision)}</p>
+        <p className="font-mono font-medium text-display-num-sm text-text-primary tabular-nums">{render(value, format, precision)}</p>
       )}
       {delta != null && !loading && (
-        <p className={["text-xs tabular-nums", statusColors[status]].join(" ")}>
+        <p className={["font-mono text-xs tabular-nums", statusColors[status]].join(" ")}>
           {deltaSign} {formatDelta(Math.abs(delta), deltaFormat)}{" "}
           {value != null && delta !== 0 && (
             <span className="text-text-tertiary">({formatPercent(Math.abs(delta / (value - delta)))})</span>

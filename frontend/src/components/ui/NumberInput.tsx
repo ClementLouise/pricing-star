@@ -102,7 +102,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             onChange={handleChange}
             onBlur={handleBlur}
             className={[
-              "w-full h-9 rounded border bg-panel-elev text-sm text-text-primary text-right",
+              "w-full h-9 rounded border bg-panel-elev text-sm text-text-primary text-right font-mono tabular-nums",
               "border-border placeholder:text-text-tertiary",
               "focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500",
               "disabled:opacity-50 disabled:cursor-not-allowed",

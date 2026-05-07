@@ -4,11 +4,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "link";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
+  keyboardHint?: string;
 }
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "bg-navy-900 text-text-primary border border-navy-700 hover:bg-navy-700 active:bg-navy-900",
+    "bg-text-primary text-bg border border-text-primary/20 hover:bg-white/90 active:bg-white/80",
   secondary:
     "bg-transparent text-text-primary border border-border hover:border-navy-500 hover:bg-panel-elev",
   ghost: "bg-transparent text-text-secondary border border-transparent hover:bg-panel-elev hover:text-text-primary",
@@ -18,20 +19,20 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-8 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
-  lg: "h-12 px-6 text-base",
+  sm: "h-7 px-2.5 text-xs",
+  md: "h-8 px-3 text-sm",
+  lg: "h-10 px-4 text-sm",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", size = "md", loading = false, disabled, children, className = "", ...props }, ref) => {
+  ({ variant = "primary", size = "md", loading = false, disabled, children, keyboardHint, className = "", ...props }, ref) => {
     const isDisabled = disabled || loading;
     return (
       <button
         ref={ref}
         disabled={isDisabled}
         className={[
-          "inline-flex items-center justify-center gap-2 rounded font-medium transition-colors duration-fast",
+          "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-fast",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500",
           variantClasses[variant],
           sizeClasses[size],
@@ -47,6 +48,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {children}
+        {keyboardHint && (
+          <kbd className="font-mono text-[10px] opacity-60 ml-1 border border-current/20 rounded px-1">
+            {keyboardHint}
+          </kbd>
+        )}
       </button>
     );
   },
