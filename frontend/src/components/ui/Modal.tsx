@@ -30,13 +30,13 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }: M
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
         className={[
-          "relative w-full bg-panel border border-border rounded-lg shadow-lg",
+          "relative w-full bg-panel border border-border rounded-lg shadow-lg animate-scale-in",
           sizeClasses[size],
         ].join(" ")}
       >

@@ -18,11 +18,18 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const variantClasses: Record<ToastVariant, string> = {
-  success: "bg-success border-success/30 text-white",
-  error: "bg-danger border-danger/30 text-white",
-  warning: "bg-warning border-warning/30 text-white",
-  info: "bg-info border-info/30 text-white",
+const variantAccent: Record<ToastVariant, string> = {
+  success: "border-l-success",
+  error: "border-l-danger",
+  warning: "border-l-warning",
+  info: "border-l-info",
+};
+
+const iconClasses: Record<ToastVariant, string> = {
+  success: "text-success",
+  error: "text-danger",
+  warning: "text-warning",
+  info: "text-info",
 };
 
 const icons: Record<ToastVariant, string> = {
@@ -60,12 +67,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={t.id}
               role="alert"
               className={[
-                "flex items-center gap-2 px-3 py-2 rounded border shadow-lg text-sm pointer-events-auto",
-                "animate-in slide-in-from-right-4",
-                variantClasses[t.variant],
+                "flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border border-l-2 shadow-lg text-sm pointer-events-auto",
+                "bg-panel-elev text-text-primary animate-slide-in-down",
+                variantAccent[t.variant],
               ].join(" ")}
             >
-              <span>{icons[t.variant]}</span>
+              <span className={["shrink-0 text-xs font-mono", iconClasses[t.variant]].join(" ")}>{icons[t.variant]}</span>
               <span>{t.message}</span>
             </div>
           ))}

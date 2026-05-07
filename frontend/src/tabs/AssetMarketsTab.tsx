@@ -263,7 +263,7 @@ function CountryCard({ code, data, onClick }: CountryCardProps) {
         )}
       </div>
       {data ? (
-        <div className="text-xs text-text-tertiary space-y-0.5">
+        <div className="font-mono text-xs text-text-tertiary tabular-nums space-y-0.5">
           {data.list_price != null && <div>{formatCurrency(data.list_price, { compact: true })}</div>}
           {data.volume != null && <div>{formatPercent(data.volume)} vol</div>}
         </div>
@@ -289,7 +289,7 @@ function MarketsGrid({ scenarioId, countryDataList }: MarketsGridProps) {
         const regionCountries = COUNTRIES.filter((c) => c.region === region);
         return (
           <div key={region} className="mb-4">
-            <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-widest mb-2 px-1">
+            <h3 className="font-mono text-[10px] font-semibold text-text-tertiary uppercase tracking-widest mb-2 px-1">
               {region}
             </h3>
             <div className="grid grid-cols-4 gap-2">

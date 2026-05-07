@@ -30,7 +30,7 @@ export function Drawer({ open, onClose, title, children, footer, width = "w-96" 
         aria-modal="true"
         aria-labelledby="drawer-title"
         className={[
-          "relative flex flex-col h-full bg-panel border-l border-border shadow-lg",
+          "relative flex flex-col h-full bg-panel border-l border-border shadow-lg animate-slide-in-right",
           width,
         ].join(" ")}
       >
