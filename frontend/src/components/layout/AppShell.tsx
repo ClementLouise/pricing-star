@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { KPICard } from "@/components/ui/KPICard";
+import { Pill } from "@/components/ui/Pill";
 import { useAppStore } from "@/store";
 
 const CLAIMS_NS = "https://pricingstar.io";
@@ -77,21 +78,30 @@ function UserMenu() {
   );
 }
 
-function Header() {
+function TenantChip() {
   const { user } = useAuth0();
   const tenantId = (user?.[`${CLAIMS_NS}/tenant_id`] as string | undefined) ?? "";
+  const tier = (user?.[`${CLAIMS_NS}/tenant_tier`] as string | undefined) ?? "";
+  if (!tenantId) return null;
+  const initials = tenantId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase();
+  const variant = tier === "trial" ? "warning" : tier === "production" ? "success" : "neutral";
+  return (
+    <div className="flex items-center gap-1.5 border-l border-border pl-3">
+      <span className="font-mono text-xs font-medium text-text-secondary">{initials}</span>
+      {tier && <Pill variant={variant}>{tier}</Pill>}
+    </div>
+  );
+}
 
+function Header() {
   return (
     <header className="flex items-center justify-between px-4 h-12 bg-panel border-b border-border shrink-0">
       <div className="flex items-center gap-3">
-        <Link to="/assets" className="text-sm font-semibold text-text-primary tracking-wide">
+        <Link to="/assets" className="flex items-center gap-0.5 text-sm font-semibold text-text-primary tracking-tight">
           PRICING<span className="text-gold-500">STAR</span>
+          <span className="text-gold-500 text-[8px] leading-none ml-0.5">●</span>
         </Link>
-        {tenantId && (
-          <span className="text-xs text-text-tertiary border-l border-border pl-3">
-            {tenantId}
-          </span>
-        )}
+        <TenantChip />
       </div>
       <UserMenu />
     </header>
@@ -158,7 +168,7 @@ function TabNav() {
           onClick={() => setActiveTab(tab.id)}
           disabled={!activeScenario && tab.id !== "asset"}
           className={[
-            "px-4 py-3 text-sm border-b-2 transition-colors duration-fast",
+            "px-3 py-2 text-xs border-b-2 transition-colors duration-fast",
             activeTab === tab.id
               ? "border-gold-500 text-text-primary font-medium"
               : "border-transparent text-text-secondary hover:text-text-primary",
