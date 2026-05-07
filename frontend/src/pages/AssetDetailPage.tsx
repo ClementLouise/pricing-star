@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { AppShell } from "@/components/layout/AppShell";
+import { ImportWizard } from "@/components/ImportWizard";
 import { useToast } from "@/components/ui/Toast";
 import { useApi } from "@/lib/api";
 import { useAsset } from "@/hooks/useAssets";
@@ -44,6 +45,7 @@ export default function AssetDetailPage() {
   const [scenarioPickerOpen, setScenarioPickerOpen] = useState(false);
   const [newScenarioName, setNewScenarioName] = useState("");
   const [downloadingPack, setDownloadingPack] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const createScenario = useCreateScenario(assetId ?? "");
 
   // Sync asset to store
@@ -151,6 +153,13 @@ export default function AssetDetailPage() {
           <Button
             size="sm"
             variant="ghost"
+            onClick={() => setImportOpen(true)}
+          >
+            Update from Excel
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             loading={downloadingPack}
             onClick={handleDownloadAssetPack}
           >
@@ -184,6 +193,14 @@ export default function AssetDetailPage() {
           />
         )
       )}
+
+      <ImportWizard
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        mode="update_existing"
+        targetAssetId={assetId}
+        targetAssetName={asset.name}
+      />
 
       {/* New scenario modal */}
       <Modal

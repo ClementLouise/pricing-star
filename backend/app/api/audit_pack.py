@@ -15,9 +15,10 @@ from app.engine.types import NPVResult, YearlyBreakdown
 from app.models.user import User
 from app.repos.asset import AssetRepo
 from app.repos.audit import AuditRepo
-from app.repos.scenario import ScenarioRepo
+from app.repos.scenario import CountryDataRepo, ScenarioRepo
 from app.repos.simulation_result import SimulationResultRepo
 from app.services.audit_pack import (
+    OVERVIEW_KEYS,
     ExportTooLargeError,
     build_asset_pack,
     build_simulation_pack,
@@ -57,6 +58,57 @@ def _asset_to_dict(asset: object) -> dict:
         "launch_year": asset.launch_year,  # type: ignore[attr-defined]
         "patent_expiry": asset.loe_year,  # type: ignore[attr-defined]
         "discount_rate": float(asset.discount_rate) if asset.discount_rate is not None else None,  # type: ignore[attr-defined]
+    }
+
+
+def _asset_to_meta(asset: object) -> dict:
+    """Full asset dict keyed by OVERVIEW_KEYS — used for asset_full.xlsx export."""
+    a = asset  # type: ignore[attr-defined]
+    return {
+        "asset_id": str(a.id),
+        "updated_at": a.updated_at.isoformat(),
+        "name": a.name,
+        "therapeutic_area": a.therapeutic_area,
+        "modality": a.modality,
+        "indication": a.indication,
+        "us_list_price": float(a.us_list_price) if a.us_list_price is not None else None,
+        "us_net_share": float(a.us_net_share) if a.us_net_share is not None else None,
+        "launch_year": a.launch_year,
+        "peak_year": a.peak_year,
+        "loe_year": a.loe_year,
+        "cogs_percent": float(a.cogs_percent),
+        "discount_rate": float(a.discount_rate),
+        "us_patient_population": a.us_patient_population,
+        "ex_us_patient_population": a.ex_us_patient_population,
+        "peak_capture_rate": float(a.peak_capture_rate),
+        "part_b_share": float(a.part_b_share),
+        "ramp_years": a.ramp_years,
+    }
+
+
+def _scenario_to_config(scenario: object, country_data_rows: list) -> dict:
+    s = scenario  # type: ignore[attr-defined]
+    return {
+        "name": s.name,
+        "description": s.description,
+        "is_baseline": s.is_baseline,
+        "regulations": s.regulations,
+        "levers": s.levers,
+        "cascade_config": s.cascade_config,
+        "country_data": [
+            {
+                "country_code": cd.country_code,
+                "list_price": float(cd.list_price) if cd.list_price is not None else None,
+                "net_price": float(cd.net_price) if cd.net_price is not None else None,
+                "volume": float(cd.volume) if cd.volume is not None else None,
+                "launched": cd.launched,
+                "launch_year": cd.launch_year,
+                "withdrawn": cd.withdrawn,
+                "g2n_ratio": float(cd.g2n_ratio) if cd.g2n_ratio is not None else None,
+                "g2n_time_series": cd.g2n_time_series,
+            }
+            for cd in country_data_rows
+        ],
     }
 
 
@@ -150,10 +202,19 @@ async def asset_audit_pack(
 
     scenarios = await ScenarioRepo(db).list(asset_id, user.tenant_id)
     sim_repo = SimulationResultRepo(db)
+    cd_repo = CountryDataRepo(db)
     asset_dict = _asset_to_dict(asset)
+    asset_meta = _asset_to_meta(asset)
 
     packs: list[dict] = []
+    scenario_configs: list[dict] = []
+
     for scenario in scenarios:
+        # Build scenario config (all scenarios, including those without simulations)
+        cd_rows = await cd_repo.list_for_scenario(scenario.id)
+        scenario_configs.append(_scenario_to_config(scenario, cd_rows))
+
+        # Simulation packs (only scenarios with at least one simulation)
         latest_sims = await sim_repo.list_for_scenario(scenario.id, user.tenant_id, limit=1)
         if not latest_sims:
             continue
@@ -173,6 +234,8 @@ async def asset_audit_pack(
             asset=asset_dict,
             packs=packs,
             generated_by=str(user.id),
+            asset_meta=asset_meta,
+            scenario_configs=scenario_configs,
         )
     except ExportTooLargeError as exc:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc

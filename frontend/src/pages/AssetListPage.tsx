@@ -9,6 +9,7 @@ import { Panel } from "@/components/ui/Panel";
 import { Pill } from "@/components/ui/Pill";
 import { SkeletonBlock } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
+import { ImportWizard } from "@/components/ImportWizard";
 import { formatCurrency, formatYear } from "@/lib/formatters";
 import { useAssetList, useCreateAsset } from "@/hooks/useAssets";
 import type { Asset } from "@/types/api";
@@ -97,6 +98,7 @@ function CreateAssetModal({ open, onClose }: { open: boolean; onClose: () => voi
 export default function AssetListPage() {
   const { data, isLoading } = useAssetList();
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const assets = data?.items ?? [];
 
@@ -112,7 +114,12 @@ export default function AssetListPage() {
       <main className="max-w-4xl mx-auto px-6 py-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-lg font-semibold text-text-primary">Assets</h1>
-          <Button onClick={() => setCreating(true)}>New asset</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
+              Import from Excel
+            </Button>
+            <Button onClick={() => setCreating(true)}>New asset</Button>
+          </div>
         </div>
 
         <Panel padding="none">
@@ -133,6 +140,11 @@ export default function AssetListPage() {
       </main>
 
       <CreateAssetModal open={creating} onClose={() => setCreating(false)} />
+      <ImportWizard
+        open={importing}
+        onClose={() => setImporting(false)}
+        mode="create_new"
+      />
     </div>
   );
 }

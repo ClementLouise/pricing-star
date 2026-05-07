@@ -10,6 +10,8 @@ import type {
   CountryData,
   CountryDataInput,
   DECascadeResult,
+  ImportDryRunResult,
+  ImportExecuteResult,
   MonteCarloResult,
   OptimizerResult,
   Page,
@@ -51,6 +53,31 @@ async function call<T>(
   if (!res.ok) {
     const body = await res.json().catch(() => null) as { detail?: string } | null;
     throw new ApiError(res.status, body?.detail ?? res.statusText);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+async function uploadFormData<T>(
+  getToken: () => Promise<string>,
+  path: string,
+  formData: FormData,
+): Promise<T> {
+  const token = await getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null) as { detail?: unknown } | null;
+    const detail = body?.detail;
+    const message =
+      typeof detail === "string" ? detail :
+      detail && typeof detail === "object" && "message" in detail
+        ? (detail as { message: string }).message
+        : res.statusText;
+    throw new ApiError(res.status, message);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -165,6 +192,26 @@ export function useApi() {
     exports: {
       myData: () => download(tok, `/export/my-data`),
       tenantPack: () => download(tok, `/export/tenant-pack`),
+    },
+
+    import: {
+      downloadTemplate: (assetName?: string) =>
+        download(tok, `/import/template${assetName ? `?asset_name=${encodeURIComponent(assetName)}` : ""}`),
+      dryRun: (file: File, mode: "create_new" | "update_existing", targetAssetId?: string) => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("mode", mode);
+        if (targetAssetId) fd.append("target_asset_id", targetAssetId);
+        return uploadFormData<ImportDryRunResult>(tok, "/import/dry-run", fd);
+      },
+      execute: (file: File, mode: "create_new" | "update_existing", targetAssetId?: string) => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("mode", mode);
+        fd.append("confirmed", "true");
+        if (targetAssetId) fd.append("target_asset_id", targetAssetId);
+        return uploadFormData<ImportExecuteResult>(tok, "/import/execute", fd);
+      },
     },
   };
 }

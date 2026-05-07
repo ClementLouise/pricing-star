@@ -22,6 +22,40 @@ class ExportTooLargeError(Exception):
     """Raised when a generated export exceeds MAX_EXPORT_BYTES."""
 
 
+# ── Round-trip import/export column definitions ───────────────────────────────
+# Canonical schema shared with asset_import.py. Column order here determines
+# column order in both the export (asset_full.xlsx) and the import template.
+
+OVERVIEW_KEYS: list[str] = [
+    "asset_id", "updated_at", "name", "therapeutic_area", "modality", "indication",
+    "us_list_price", "us_net_share", "launch_year", "peak_year", "loe_year",
+    "cogs_percent", "discount_rate", "us_patient_population", "ex_us_patient_population",
+    "peak_capture_rate", "part_b_share", "ramp_years",
+]
+
+SCENARIO_COLS: list[str] = [
+    "scenario_name", "description", "is_baseline",
+    "generous_active", "generous_year", "generous_medicaid_share",
+    "guard_active", "guard_year", "guard_submit_method_ii", "guard_phase_in",
+    "globe_active", "globe_year", "globe_submit_method_ii", "globe_phase_in",
+    "cascade_enabled", "cascade_max_iter",
+]
+
+COUNTRY_DATA_COLS: list[str] = [
+    "scenario_name", "country_code",
+    "list_price", "net_price", "volume",
+    "launched", "launch_year", "withdrawn", "g2n_ratio",
+]
+
+G2N_COLS: list[str] = ["scenario_name", "country_code", "year", "g2n_value"]
+
+LEVER_COLS: list[str] = ["scenario_name", "lever_type", "country_code", "value"]
+
+VALID_LEVER_TYPES: frozenset[str] = frozenset({
+    "withdrawal", "price_floor", "delayed_launch", "de_opt_in", "gr_clawback_stress",
+})
+
+
 # ── XLSX builder ─────────────────────────────────────────────────────────────
 
 _GOLD = "C9A84C"
@@ -206,15 +240,124 @@ def build_simulation_pack(
     return raw
 
 
+def _build_asset_full_xlsx(
+    asset_meta: dict[str, Any],
+    scenario_configs: list[dict[str, Any]],
+) -> bytes:
+    """
+    Build the 5-sheet importable XLSX (asset_full.xlsx).
+    Round-trip compatible with asset_import.parse_xlsx().
+    asset_meta keys must include all OVERVIEW_KEYS fields.
+    """
+    wb = openpyxl.Workbook()
+
+    # ── Sheet 1: Overview (key / value) ──────────────────────────────
+    ws1 = wb.active
+    ws1.title = "Overview"
+    for col, label in enumerate(["key", "value"], start=1):
+        c = ws1.cell(row=1, column=col, value=label)
+        c.font = _HEADER_FONT
+        c.fill = _HEADER_FILL
+
+    for row_idx, key in enumerate(OVERVIEW_KEYS, start=2):
+        ws1.cell(row=row_idx, column=1, value=key).font = Font(bold=True, size=10)
+        ws1.cell(row=row_idx, column=2, value=asset_meta.get(key))
+    _autofit(ws1)
+
+    # ── Sheet 2: Scenarios ────────────────────────────────────────────
+    ws2 = wb.create_sheet("Scenarios")
+    _header_row(ws2, SCENARIO_COLS)
+    for row_idx, sc in enumerate(scenario_configs, start=2):
+        regs = sc.get("regulations") or {}
+        generous = regs.get("generous") or {}
+        guard = regs.get("guard") or {}
+        globe = regs.get("globe") or {}
+        cascade = sc.get("cascade_config") or {}
+        vals = [
+            sc.get("name"), sc.get("description"), sc.get("is_baseline", False),
+            generous.get("active", False), generous.get("year"), generous.get("medicaid_share", 0.07),
+            guard.get("active", False), guard.get("year"), guard.get("submit_method_ii", False), guard.get("phase_in"),
+            globe.get("active", False), globe.get("year"), globe.get("submit_method_ii", False), globe.get("phase_in"),
+            cascade.get("enabled", True), cascade.get("max_iter", 10),
+        ]
+        for col_idx, v in enumerate(vals, start=1):
+            ws2.cell(row=row_idx, column=col_idx, value=v)
+    _autofit(ws2)
+
+    # ── Sheet 3: CountryData ──────────────────────────────────────────
+    ws3 = wb.create_sheet("CountryData")
+    _header_row(ws3, COUNTRY_DATA_COLS)
+    row_idx = 2
+    for sc in scenario_configs:
+        for cd in sc.get("country_data") or []:
+            vals = [
+                sc.get("name"), cd.get("country_code"),
+                cd.get("list_price"), cd.get("net_price"), cd.get("volume"),
+                cd.get("launched", False), cd.get("launch_year"),
+                cd.get("withdrawn", False), cd.get("g2n_ratio"),
+            ]
+            for col_idx, v in enumerate(vals, start=1):
+                ws3.cell(row=row_idx, column=col_idx, value=v)
+            row_idx += 1
+    _autofit(ws3)
+
+    # ── Sheet 4: G2N_TimeSeries ───────────────────────────────────────
+    ws4 = wb.create_sheet("G2N_TimeSeries")
+    _header_row(ws4, G2N_COLS)
+    row_idx = 2
+    for sc in scenario_configs:
+        for cd in sc.get("country_data") or []:
+            for year_str, g2n_val in sorted((cd.get("g2n_time_series") or {}).items()):
+                ws4.cell(row=row_idx, column=1, value=sc.get("name"))
+                ws4.cell(row=row_idx, column=2, value=cd.get("country_code"))
+                ws4.cell(row=row_idx, column=3, value=int(year_str))
+                ws4.cell(row=row_idx, column=4, value=g2n_val)
+                row_idx += 1
+    _autofit(ws4)
+
+    # ── Sheet 5: Levers ───────────────────────────────────────────────
+    ws5 = wb.create_sheet("Levers")
+    _header_row(ws5, LEVER_COLS)
+    row_idx = 2
+    for sc in scenario_configs:
+        levers = sc.get("levers") or {}
+        name = sc.get("name")
+        for country in levers.get("withdrawals") or []:
+            for col_idx, v in enumerate([name, "withdrawal", country, True], start=1):
+                ws5.cell(row=row_idx, column=col_idx, value=v)
+            row_idx += 1
+        for country, pct in (levers.get("price_floors") or {}).items():
+            for col_idx, v in enumerate([name, "price_floor", country, pct], start=1):
+                ws5.cell(row=row_idx, column=col_idx, value=v)
+            row_idx += 1
+        for country, year in (levers.get("delayed_launches") or {}).items():
+            for col_idx, v in enumerate([name, "delayed_launch", country, year], start=1):
+                ws5.cell(row=row_idx, column=col_idx, value=v)
+            row_idx += 1
+        for lever in ("de_opt_in", "gr_clawback_stress"):
+            for col_idx, v in enumerate([name, lever, "", levers.get(lever, False)], start=1):
+                ws5.cell(row=row_idx, column=col_idx, value=v)
+            row_idx += 1
+    _autofit(ws5)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
 def build_asset_pack(
     asset: dict[str, Any],
     packs: list[dict[str, Any]],
     generated_by: str,
+    asset_meta: dict[str, Any] | None = None,
+    scenario_configs: list[dict[str, Any]] | None = None,
 ) -> bytes:
     """
     ZIP containing one sub-folder per simulation for an asset.
 
     packs: list of {"scenario_name", "sim", "audit_json"} dicts.
+    If asset_meta + scenario_configs are provided, also adds asset_full.xlsx
+    at the ZIP root — the importable round-trip file.
     Raises ExportTooLargeError if total exceeds MAX_EXPORT_BYTES.
     """
     import json
@@ -233,8 +376,17 @@ def build_asset_pack(
             f"Generated:  {generated_at}\n"
             f"Simulations: {len(packs)}\n\n"
             f"Each sub-folder contains audit.json + prices.xlsx for one simulation.\n"
+            + (
+                f"\nasset_full.xlsx — importable round-trip file (re-upload to update this asset)\n"
+                if asset_meta is not None else ""
+            )
         )
         zf.writestr(f"{prefix}README.txt", readme)
+
+        # Importable round-trip file
+        if asset_meta is not None and scenario_configs is not None:
+            full_xlsx = _build_asset_full_xlsx(asset_meta, scenario_configs)
+            zf.writestr(f"{prefix}asset_full.xlsx", full_xlsx)
 
         for pack in packs:
             scenario_name = pack["scenario_name"]

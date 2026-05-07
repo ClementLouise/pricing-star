@@ -1,5 +1,37 @@
 /** TypeScript types matching backend Pydantic schemas — per PRD §05 */
 
+// ── Import wizard ─────────────────────────────────────────────────────────────
+
+export interface ImportValidationError {
+  sheet: string;
+  row: number | null;
+  column: string | null;
+  code: string;
+  message: string;
+  raw_value: unknown;
+}
+
+export interface ImportSummary {
+  scenario_count: number;
+  country_data_count: number;
+  scenario_names: string[];
+}
+
+export interface ImportDryRunResult {
+  valid: boolean;
+  mode: string;
+  errors: ImportValidationError[];
+  warnings: ImportValidationError[];
+  summary: ImportSummary;
+}
+
+export interface ImportExecuteResult {
+  asset_id: string;
+  scenario_ids: string[];
+  country_data_count: number;
+  warnings: ImportValidationError[];
+}
+
 export interface Asset {
   id: string;
   tenant_id: string;

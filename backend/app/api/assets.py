@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api._occ import check_occ
-from app.auth import require_role
+from app.auth import TenantContext, require_auth, require_role
 from app.database import get_db
 from app.models.asset import Asset
 from app.models.user import User
@@ -13,6 +13,7 @@ from app.repos.asset import AssetRepo
 from app.repos.audit import AuditRepo
 from app.schemas.asset import AssetCreate, AssetDuplicate, AssetRead, AssetUpdate
 from app.schemas.common import Page
+from app.services.trial_limits import assert_can_create_asset
 
 
 def _asset_snapshot(asset: Asset) -> dict:
@@ -59,8 +60,10 @@ async def list_assets(
 async def create_asset(
     payload: AssetCreate,
     user: User = Depends(_editor),
+    ctx: TenantContext = Depends(require_auth),
     db: AsyncSession = Depends(get_db),
 ) -> AssetRead:
+    await assert_can_create_asset(user.tenant_id, ctx.tenant_tier, ctx.trial_expires_at, db)
     repo = AssetRepo(db)
     asset = await repo.create(user.tenant_id, user.id, payload)
     await AuditRepo(db).log(
