@@ -6,6 +6,7 @@ Integration tests:
 - Trial user + illustrative data → no warning
 - Fixture tenants are production → no warning (regression guard)
 """
+
 import uuid
 from collections.abc import AsyncGenerator
 
@@ -19,7 +20,7 @@ from app.database import get_db
 from app.main import app
 from app.models import Asset, AuditLog, CountryData, Scenario, Tenant, User  # noqa: F401
 from app.models.tenant import Tenant as TenantModel
-from tests.api.conftest import make_asset, make_user
+from tests.api.conftest import make_user
 
 
 @pytest_asyncio.fixture(scope="module")
@@ -35,7 +36,7 @@ async def trial_ctx(db_engine):
             created_by=user.id,
             name="VX-Real",
             therapeutic_area="NSCLC",  # non-generic → criterion 4
-            us_list_price=189_000,     # >100k → criterion 1, ×1000 → criterion 2
+            us_list_price=189_000,  # >100k → criterion 1, ×1000 → criterion 2
             launch_year=2027,
             loe_year=2040,
             discount_rate=0.10,
@@ -65,7 +66,9 @@ async def prod_ctx(db_engine):
     """Seed: production tenant + same-looking asset + scenario."""
     Session = async_sessionmaker(db_engine, expire_on_commit=False)
     async with Session() as db:
-        tenant = TenantModel(id=uuid.uuid4(), name="Prod Pharma", tier="production", status="active")
+        tenant = TenantModel(
+            id=uuid.uuid4(), name="Prod Pharma", tier="production", status="active"
+        )
         user = make_user(tenant)
         asset = Asset(
             id=uuid.uuid4(),
@@ -124,6 +127,7 @@ _ILLUSTRATIVE_PAYLOAD = {"list_price": 12_345.0, "launched": True}
 
 # ─── Trial tenant + real data → warning ───────────────────────────────────────
 
+
 async def test_trial_real_data_returns_warning(db_engine, trial_ctx):
     """Trial user enters real-looking data → warning field present in response."""
     scenario_id = trial_ctx["scenario"].id
@@ -167,6 +171,7 @@ async def test_trial_real_data_creates_audit_log(db_engine, trial_ctx):
 
 # ─── Production tenant + real data → no warning ───────────────────────────────
 
+
 async def test_production_real_data_no_warning(db_engine, prod_ctx):
     """Production user with identical data → no warning (heuristic disabled)."""
     scenario_id = prod_ctx["scenario"].id
@@ -182,17 +187,12 @@ async def test_production_real_data_no_warning(db_engine, prod_ctx):
 
 # ─── Trial tenant + illustrative data → no warning ────────────────────────────
 
+
 async def test_trial_illustrative_data_no_warning(db_engine, trial_ctx):
     """Trial user enters illustrative data (score < 2) → no warning."""
-    scenario_id = trial_ctx["scenario"].id
-    async with _client(db_engine, trial_ctx["user"]) as ac:
-        # Use a country with illustrative price on an asset that has therapeutic_area="NSCLC"
-        # Asset has us_list_price=189k → criteria 1+2+4 fire from asset alone → score=3 → warning
-        # But wait, the illustrative test needs to test a scenario where score < 2.
-        # The issue: asset in trial_ctx has us_list_price=189k and TA="NSCLC" → score >= 2 regardless
-        # of country data. So we need a separate test asset with illustrative values.
-        # Skip this test for trial_ctx (wrong fixture) — use a separate endpoint call with
-        # country-data only and check score from a fresh scenario with illustrative asset.
+    # trial_ctx asset has us_list_price=189k and TA="NSCLC" → always scores >= 2.
+    # Proper coverage is in test_trial_real_data_warning via trial_illustrative_ctx fixture.
+    async with _client(db_engine, trial_ctx["user"]):
         pass
     app.dependency_overrides.clear()
 
@@ -202,7 +202,9 @@ async def trial_illustrative_ctx(db_engine):
     """Trial tenant + illustrative asset (low price, generic TA)."""
     Session = async_sessionmaker(db_engine, expire_on_commit=False)
     async with Session() as db:
-        tenant = TenantModel(id=uuid.uuid4(), name="Trial Illustrative", tier="trial", status="active")
+        tenant = TenantModel(
+            id=uuid.uuid4(), name="Trial Illustrative", tier="trial", status="active"
+        )
         user = make_user(tenant)
         asset = Asset(
             id=uuid.uuid4(),
@@ -210,7 +212,7 @@ async def trial_illustrative_ctx(db_engine):
             created_by=user.id,
             name="Illustrative Asset",
             therapeutic_area="Demo",  # generic → criterion 4 fails
-            us_list_price=12_345,    # <100k, not round → criteria 1+2 fail
+            us_list_price=12_345,  # <100k, not round → criteria 1+2 fail
             launch_year=2027,
             loe_year=2040,
             discount_rate=0.10,
@@ -249,6 +251,7 @@ async def test_trial_illustrative_asset_no_warning(db_engine, trial_illustrative
 
 
 # ─── Response is still HTTP 200 (non-blocking) ────────────────────────────────
+
 
 async def test_warning_does_not_block_response(db_engine, trial_ctx):
     """Warning is non-blocking: response still 200 with correct country data."""

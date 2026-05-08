@@ -1,8 +1,16 @@
 """Reference data endpoints (read-only, shared) — per PRD §05."""
+
 from fastapi import APIRouter
 
-from app.engine.constants import GDP_PPP_ADJUSTERS, IRP_RULES, US_MODEL_BASKETS
-from app.engine.constants import GUARD_PHASEIN, GLOBE_PHASEIN, DEFAULT_G2N, COUNTRY_NAMES
+from app.engine.constants import (
+    COUNTRY_NAMES,
+    DEFAULT_G2N,
+    GDP_PPP_ADJUSTERS,
+    GLOBE_PHASEIN,
+    GUARD_PHASEIN,
+    IRP_RULES,
+    US_MODEL_BASKETS,
+)
 
 router = APIRouter(prefix="/reference", tags=["reference"])
 
@@ -28,7 +36,7 @@ async def list_countries() -> dict:
 
 @router.get("/baskets")
 async def get_baskets() -> dict:
-    return {model: countries for model, countries in US_MODEL_BASKETS.items()}
+    return dict(US_MODEL_BASKETS)
 
 
 @router.get("/phase-ins")

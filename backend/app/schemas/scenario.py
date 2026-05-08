@@ -1,4 +1,5 @@
 """Pydantic schemas for Scenario + CountryData CRUD — per PRD §05."""
+
 import uuid
 from datetime import datetime
 
@@ -8,6 +9,7 @@ _OCC_EXCLUDE = frozenset({"expected_updated_at", "force_override"})
 
 
 # ─── Regulations ────────────────────────────────────────────────────────────
+
 
 class GenerousConfig(BaseModel):
     active: bool = False
@@ -37,6 +39,7 @@ class RegulationsConfig(BaseModel):
 
 # ─── Levers ─────────────────────────────────────────────────────────────────
 
+
 class LeversConfig(BaseModel):
     withdrawals: list[str] = []
     price_floors: dict[str, float] = {}
@@ -46,6 +49,7 @@ class LeversConfig(BaseModel):
 
 
 # ─── CountryData ─────────────────────────────────────────────────────────────
+
 
 class CountryDataInput(BaseModel):
     list_price: float | None = Field(None, gt=0)
@@ -65,7 +69,7 @@ class CountryDataInput(BaseModel):
             try:
                 year = int(key)
             except (ValueError, TypeError):
-                raise ValueError(f"G2N time series key '{key}' must be an integer year")
+                raise ValueError(f"G2N time series key '{key}' must be an integer year") from None
             if not (2020 <= year <= 2075):
                 raise ValueError(f"G2N time series year {year} is out of range [2020, 2075]")
             if not (0 < value <= 1):
@@ -98,6 +102,7 @@ class CountryDataRead(BaseModel):
 
 
 # ─── Scenario ────────────────────────────────────────────────────────────────
+
 
 class ScenarioCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)

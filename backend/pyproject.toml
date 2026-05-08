@@ -4,7 +4,17 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "S", "B", "A", "C4", "RET", "SIM"]
-ignore = ["S101"]  # allow assert in tests
+ignore = [
+    "S101",   # allow assert in tests
+    "B008",   # FastAPI Depends() in function defaults is intentional
+    "N806",   # uppercase vars in functions (constants, SQLAlchemy Session factory)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "N802", "N803", "E501"]
+"app/engine/monte_carlo.py" = ["S311"]
+"app/auth.py" = ["S112"]
+"app/services/asset_import.py" = ["A001"]
 
 [tool.black]
 line-length = 100

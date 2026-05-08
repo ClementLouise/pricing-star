@@ -4,11 +4,12 @@ GDPR Article 20 data portability endpoints.
   GET /export/my-data      — full tenant data export (any authenticated user)
   GET /export/tenant-pack  — same, admin-only, includes all users list
 """
+
 from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +24,6 @@ from app.repos.simulation_result import SimulationResultRepo
 from app.repos.tenant import TenantRepo
 from app.repos.user import UserRepo
 from app.services.audit_pack import ExportTooLargeError, build_gdpr_export
-from fastapi import HTTPException, status
 
 router = APIRouter(prefix="/export", tags=["export"])
 
@@ -121,7 +121,10 @@ def _audit_log_to_dict(e: object) -> dict:
 async def _collect_tenant_data(
     user: User, db: AsyncSession
 ) -> tuple[dict, dict, list, list, list, list, list]:
-    """Collect all tenant data needed for GDPR export. Returns (user_dict, tenant, assets, scenarios, sims, keys, logs)."""
+    """Collect all tenant data needed for GDPR export.
+
+    Returns (user_dict, tenant, assets, scenarios, sims, keys, logs).
+    """
     tenant = await TenantRepo(db).get_by_id(user.tenant_id)
     assets = await AssetRepo(db).list_all(user.tenant_id)
     scenarios = await ScenarioRepo(db).list_all_for_tenant(user.tenant_id)
@@ -146,7 +149,9 @@ async def my_data_export(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """GDPR Article 20 — full data export for the authenticated user's tenant."""
-    user_dict, tenant_dict, assets, scenarios, sims, keys, logs = await _collect_tenant_data(user, db)
+    user_dict, tenant_dict, assets, scenarios, sims, keys, logs = await _collect_tenant_data(
+        user, db
+    )
 
     try:
         pack_bytes = build_gdpr_export(
@@ -159,7 +164,9 @@ async def my_data_export(
             audit_logs=logs,
         )
     except ExportTooLargeError as exc:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)
+        ) from exc
 
     await AuditRepo(db).log(
         tenant_id=user.tenant_id,
@@ -185,7 +192,9 @@ async def tenant_pack_export(
     """Admin-only full tenant data export including all users."""
     all_users = await UserRepo(db).list_for_tenant(user.tenant_id)
 
-    user_dict, tenant_dict, assets, scenarios, sims, keys, logs = await _collect_tenant_data(user, db)
+    user_dict, tenant_dict, assets, scenarios, sims, keys, logs = await _collect_tenant_data(
+        user, db
+    )
 
     all_users_dicts = [_user_to_dict(u) for u in all_users]
     user_dict_with_all = {**user_dict, "_all_users": all_users_dicts}
@@ -201,7 +210,9 @@ async def tenant_pack_export(
             audit_logs=logs,
         )
     except ExportTooLargeError as exc:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)
+        ) from exc
 
     await AuditRepo(db).log(
         tenant_id=user.tenant_id,

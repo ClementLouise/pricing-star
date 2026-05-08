@@ -1,4 +1,5 @@
 """Pydantic schemas for SimulationResult — per PRD §05."""
+
 import uuid
 from datetime import datetime
 
@@ -50,12 +51,6 @@ class SimulateResponse(BaseModel):
     computed_at: datetime
     computed_in_ms: int
     results: SimulationResultRead
-
-
-class MonteCarloRequest(BaseModel):
-    n: int = 500
-    sigma: float = 0.05
-    seed: int | None = None
 
 
 class MonteCarloJobResponse(BaseModel):
@@ -111,6 +106,7 @@ class DECascadeResponse(BaseModel):
 
 # ─── Monte Carlo ─────────────────────────────────────────────────────────────
 
+
 class MonteCarloRequest(BaseModel):
     n: int = 500
     sigma: float = 0.05
@@ -130,6 +126,7 @@ class MonteCarloResponse(BaseModel):
 
 # ─── Optimizer ────────────────────────────────────────────────────────────────
 
+
 class OptimizerRecommendation(BaseModel):
     type: str
     title: str
@@ -146,6 +143,7 @@ class OptimizerResult(BaseModel):
 
 
 # ─── Comparison ───────────────────────────────────────────────────────────────
+
 
 class ScenarioCompareRequest(BaseModel):
     scenario_ids: list[uuid.UUID]

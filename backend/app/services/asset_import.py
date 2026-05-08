@@ -5,13 +5,15 @@ Round-trip with audit_pack.py: same sheet names, same column headers.
 The 3 output-only sheets (Simulations, AuditLog, Methodology) are ignored
 silently if present in the uploaded file.
 """
+
 from __future__ import annotations
 
+import contextlib
 import io
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 import openpyxl
@@ -29,22 +31,25 @@ from app.schemas.scenario import (
     ScenarioCreate,
 )
 from app.services.audit_pack import (
-    COUNTRY_DATA_COLS,
-    G2N_COLS,
-    LEVER_COLS,
-    OVERVIEW_KEYS,
-    SCENARIO_COLS,
     VALID_LEVER_TYPES,
     _build_asset_full_xlsx,
-    _header_row,
 )
 
 # Output-only sheets: present in audit pack export, ignored on import
-IGNORED_SHEETS = frozenset({"Simulations", "AuditLog", "Methodology",
-                             "Summary", "Cascade Prices", "Yearly Breakdown", "MFN Analysis"})
+IGNORED_SHEETS = frozenset(
+    {
+        "Simulations",
+        "AuditLog",
+        "Methodology",
+        "Summary",
+        "Cascade Prices",
+        "Yearly Breakdown",
+        "MFN Analysis",
+    }
+)
 
 
-class ImportMode(str, Enum):
+class ImportMode(StrEnum):
     DRY_RUN = "dry_run"
     CREATE_NEW = "create_new"
     UPDATE_EXISTING = "update_existing"
@@ -89,6 +94,7 @@ class ImportPlan:
 
 
 # ── Cell helpers ──────────────────────────────────────────────────────────────
+
 
 def _to_bool(val: Any, default: bool = False) -> bool:
     if val is None:
@@ -138,6 +144,7 @@ def _col_map(ws: Any) -> dict[str, int]:
 
 # ── Sheet parsers ─────────────────────────────────────────────────────────────
 
+
 def _parse_overview_sheet(
     ws: Any,
     mode: ImportMode,
@@ -169,40 +176,66 @@ def _parse_overview_sheet(
         try:
             asset_id = uuid.UUID(str(raw_id).strip())
         except ValueError:
-            errors.append(ImportError(
-                sheet="Overview", row=_row("asset_id"), column="B",
-                code="INVALID_UUID", message="asset_id n'est pas un UUID valide",
-                raw_value=raw_id,
-            ))
+            errors.append(
+                ImportError(
+                    sheet="Overview",
+                    row=_row("asset_id"),
+                    column="B",
+                    code="INVALID_UUID",
+                    message="asset_id n'est pas un UUID valide",
+                    raw_value=raw_id,
+                )
+            )
 
     if mode == ImportMode.UPDATE_EXISTING:
         if asset_id is None:
-            errors.append(ImportError(
-                sheet="Overview", row=None, column="B",
-                code="MISSING_ASSET_ID",
-                message="asset_id requis dans Overview pour le mode update_existing",
-            ))
+            errors.append(
+                ImportError(
+                    sheet="Overview",
+                    row=None,
+                    column="B",
+                    code="MISSING_ASSET_ID",
+                    message="asset_id requis dans Overview pour le mode update_existing",
+                )
+            )
         elif target_asset_id and asset_id != target_asset_id:
-            errors.append(ImportError(
-                sheet="Overview", row=_row("asset_id"), column="B",
-                code="ASSET_ID_MISMATCH",
-                message=f"Le fichier cible l'asset {asset_id} mais l'endpoint cible {target_asset_id}",
-                raw_value=str(raw_id),
-            ))
+            errors.append(
+                ImportError(
+                    sheet="Overview",
+                    row=_row("asset_id"),
+                    column="B",
+                    code="ASSET_ID_MISMATCH",
+                    message=(
+                        f"Le fichier cible l'asset {asset_id} "
+                        f"mais l'endpoint cible {target_asset_id}"
+                    ),
+                    raw_value=str(raw_id),
+                )
+            )
         raw_ts = _get("updated_at")
         if raw_ts:
-            try:
+            with contextlib.suppress(ValueError):
                 expected_updated_at = datetime.fromisoformat(str(raw_ts).strip())
-            except ValueError:
-                pass  # OCC token optional — will skip OCC check if missing
 
     # Build asset fields dict
     asset_data: dict[str, Any] = {}
     _str_fields = {"name", "therapeutic_area", "modality", "indication"}
-    _float_fields = {"us_list_price", "us_net_share", "cogs_percent", "discount_rate",
-                     "peak_capture_rate", "part_b_share"}
-    _int_fields = {"launch_year", "peak_year", "loe_year",
-                   "us_patient_population", "ex_us_patient_population", "ramp_years"}
+    _float_fields = {
+        "us_list_price",
+        "us_net_share",
+        "cogs_percent",
+        "discount_rate",
+        "peak_capture_rate",
+        "part_b_share",
+    }
+    _int_fields = {
+        "launch_year",
+        "peak_year",
+        "loe_year",
+        "us_patient_population",
+        "ex_us_patient_population",
+        "ramp_years",
+    }
 
     for f in _str_fields:
         v = _to_str(_get(f))
@@ -221,23 +254,31 @@ def _parse_overview_sheet(
 
     if mode == ImportMode.CREATE_NEW:
         if not asset_data.get("name"):
-            errors.append(ImportError(
-                sheet="Overview", row=_row("name"), column="B",
-                code="MISSING_REQUIRED_FIELD",
-                message="Le champ 'name' est requis dans Overview",
-            ))
+            errors.append(
+                ImportError(
+                    sheet="Overview",
+                    row=_row("name"),
+                    column="B",
+                    code="MISSING_REQUIRED_FIELD",
+                    message="Le champ 'name' est requis dans Overview",
+                )
+            )
             return None, asset_id, expected_updated_at
         try:
             payload: AssetCreate | AssetUpdate = AssetCreate(**asset_data)
         except ValidationError as exc:
             for e in exc.errors():
                 loc = e["loc"][0] if e["loc"] else "?"
-                errors.append(ImportError(
-                    sheet="Overview", row=_row(str(loc)), column="B",
-                    code=e["type"].upper().replace("-", "_"),
-                    message=f"Champ '{loc}' : {e['msg']}",
-                    raw_value=asset_data.get(str(loc)),
-                ))
+                errors.append(
+                    ImportError(
+                        sheet="Overview",
+                        row=_row(str(loc)),
+                        column="B",
+                        code=e["type"].upper().replace("-", "_"),
+                        message=f"Champ '{loc}' : {e['msg']}",
+                        raw_value=asset_data.get(str(loc)),
+                    )
+                )
             return None, asset_id, expected_updated_at
     else:
         payload = AssetUpdate(**asset_data)
@@ -248,10 +289,15 @@ def _parse_overview_sheet(
 def _parse_scenarios_sheet(ws: Any, errors: list[ImportError]) -> list[dict[str, Any]]:
     cols = _col_map(ws)
     if "scenario_name" not in cols:
-        errors.append(ImportError(
-            sheet="Scenarios", row=1, column="scenario_name",
-            code="MISSING_COLUMN", message="Colonne 'scenario_name' manquante dans Scenarios",
-        ))
+        errors.append(
+            ImportError(
+                sheet="Scenarios",
+                row=1,
+                column="scenario_name",
+                code="MISSING_COLUMN",
+                message="Colonne 'scenario_name' manquante dans Scenarios",
+            )
+        )
         return []
 
     results: list[dict[str, Any]] = []
@@ -263,38 +309,40 @@ def _parse_scenarios_sheet(ws: Any, errors: list[ImportError]) -> list[dict[str,
         if not name:
             continue
 
-        def _cell(col: str) -> Any:
+        def _cell(col: str, _row: Any = row) -> Any:
             idx = cols.get(col)
-            return row[idx - 1] if idx and idx - 1 < len(row) else None
+            return _row[idx - 1] if idx and idx - 1 < len(_row) else None
 
-        results.append({
-            "name": name,
-            "description": _to_str(_cell("description")),
-            "is_baseline": _to_bool(_cell("is_baseline"), False),
-            "regulations": {
-                "generous": {
-                    "active": _to_bool(_cell("generous_active"), False),
-                    "year": _to_int(_cell("generous_year")),
-                    "medicaid_share": _to_float(_cell("generous_medicaid_share")) or 0.07,
+        results.append(
+            {
+                "name": name,
+                "description": _to_str(_cell("description")),
+                "is_baseline": _to_bool(_cell("is_baseline"), False),
+                "regulations": {
+                    "generous": {
+                        "active": _to_bool(_cell("generous_active"), False),
+                        "year": _to_int(_cell("generous_year")),
+                        "medicaid_share": _to_float(_cell("generous_medicaid_share")) or 0.07,
+                    },
+                    "guard": {
+                        "active": _to_bool(_cell("guard_active"), False),
+                        "year": _to_int(_cell("guard_year")),
+                        "submit_method_ii": _to_bool(_cell("guard_submit_method_ii"), False),
+                        "phase_in": _to_float(_cell("guard_phase_in")),
+                    },
+                    "globe": {
+                        "active": _to_bool(_cell("globe_active"), False),
+                        "year": _to_int(_cell("globe_year")),
+                        "submit_method_ii": _to_bool(_cell("globe_submit_method_ii"), False),
+                        "phase_in": _to_float(_cell("globe_phase_in")),
+                    },
                 },
-                "guard": {
-                    "active": _to_bool(_cell("guard_active"), False),
-                    "year": _to_int(_cell("guard_year")),
-                    "submit_method_ii": _to_bool(_cell("guard_submit_method_ii"), False),
-                    "phase_in": _to_float(_cell("guard_phase_in")),
+                "cascade_config": {
+                    "enabled": _to_bool(_cell("cascade_enabled"), True),
+                    "max_iter": _to_int(_cell("cascade_max_iter")) or 10,
                 },
-                "globe": {
-                    "active": _to_bool(_cell("globe_active"), False),
-                    "year": _to_int(_cell("globe_year")),
-                    "submit_method_ii": _to_bool(_cell("globe_submit_method_ii"), False),
-                    "phase_in": _to_float(_cell("globe_phase_in")),
-                },
-            },
-            "cascade_config": {
-                "enabled": _to_bool(_cell("cascade_enabled"), True),
-                "max_iter": _to_int(_cell("cascade_max_iter")) or 10,
-            },
-        })
+            }
+        )
     return results
 
 
@@ -306,17 +354,23 @@ def _parse_country_data_sheet(
     cols = _col_map(ws)
     for req in ("scenario_name", "country_code"):
         if req not in cols:
-            errors.append(ImportError(
-                sheet="CountryData", row=1, column=req,
-                code="MISSING_COLUMN", message=f"Colonne '{req}' manquante dans CountryData",
-            ))
+            errors.append(
+                ImportError(
+                    sheet="CountryData",
+                    row=1,
+                    column=req,
+                    code="MISSING_COLUMN",
+                    message=f"Colonne '{req}' manquante dans CountryData",
+                )
+            )
             return {}
 
     results: dict[str, list[tuple[str, dict]]] = {}
     for row in ws.iter_rows(min_row=2, values_only=True):
-        def _cell(col: str) -> Any:
+
+        def _cell(col: str, _row: Any = row) -> Any:
             idx = cols.get(col)
-            return row[idx - 1] if idx and idx - 1 < len(row) else None
+            return _row[idx - 1] if idx and idx - 1 < len(_row) else None
 
         sc_name = _to_str(_cell("scenario_name"))
         cc = _to_str(_cell("country_code"))
@@ -325,20 +379,28 @@ def _parse_country_data_sheet(
 
         row_num = None  # can't get row number in values_only mode easily
         if sc_name not in valid_scenario_names:
-            errors.append(ImportError(
-                sheet="CountryData", row=row_num, column="scenario_name",
-                code="UNKNOWN_SCENARIO_REF",
-                message=f"Scénario '{sc_name}' introuvable dans l'onglet Scenarios",
-                raw_value=sc_name,
-            ))
+            errors.append(
+                ImportError(
+                    sheet="CountryData",
+                    row=row_num,
+                    column="scenario_name",
+                    code="UNKNOWN_SCENARIO_REF",
+                    message=f"Scénario '{sc_name}' introuvable dans l'onglet Scenarios",
+                    raw_value=sc_name,
+                )
+            )
             continue
         if cc not in COUNTRY_NAMES:
-            errors.append(ImportError(
-                sheet="CountryData", row=row_num, column="country_code",
-                code="INVALID_COUNTRY_CODE",
-                message=f"Code pays '{cc}' invalide. Codes acceptés : {sorted(COUNTRY_NAMES)}",
-                raw_value=cc,
-            ))
+            errors.append(
+                ImportError(
+                    sheet="CountryData",
+                    row=row_num,
+                    column="country_code",
+                    code="INVALID_COUNTRY_CODE",
+                    message=f"Code pays '{cc}' invalide. Codes acceptés : {sorted(COUNTRY_NAMES)}",
+                    raw_value=cc,
+                )
+            )
             continue
 
         cd_dict = {
@@ -366,9 +428,10 @@ def _parse_g2n_time_series_sheet(
 
     results: dict[str, dict[str, dict[int, float]]] = {}
     for row in ws.iter_rows(min_row=2, values_only=True):
-        def _cell(col: str) -> Any:
+
+        def _cell(col: str, _row: Any = row) -> Any:
             idx = cols.get(col)
-            return row[idx - 1] if idx and idx - 1 < len(row) else None
+            return _row[idx - 1] if idx and idx - 1 < len(_row) else None
 
         sc_name = _to_str(_cell("scenario_name"))
         cc = _to_str(_cell("country_code"))
@@ -383,20 +446,28 @@ def _parse_g2n_time_series_sheet(
             continue
 
         if not (2020 <= year_val <= 2075):  # type: ignore[operator]
-            errors.append(ImportError(
-                sheet="G2N_TimeSeries", row=None, column="year",
-                code="G2N_YEAR_OUT_OF_RANGE",
-                message=f"Année G2N {year_val} hors de la plage [2020, 2075]",
-                raw_value=year_val,
-            ))
+            errors.append(
+                ImportError(
+                    sheet="G2N_TimeSeries",
+                    row=None,
+                    column="year",
+                    code="G2N_YEAR_OUT_OF_RANGE",
+                    message=f"Année G2N {year_val} hors de la plage [2020, 2075]",
+                    raw_value=year_val,
+                )
+            )
             continue
         if not (0 < g2n_val <= 1):  # type: ignore[operator]
-            errors.append(ImportError(
-                sheet="G2N_TimeSeries", row=None, column="g2n_value",
-                code="INVALID_G2N",
-                message=f"Valeur G2N {g2n_val} doit être dans (0, 1]",
-                raw_value=g2n_val,
-            ))
+            errors.append(
+                ImportError(
+                    sheet="G2N_TimeSeries",
+                    row=None,
+                    column="g2n_value",
+                    code="INVALID_G2N",
+                    message=f"Valeur G2N {g2n_val} doit être dans (0, 1]",
+                    raw_value=g2n_val,
+                )
+            )
             continue
 
         results.setdefault(sc_name, {}).setdefault(cc, {})[year_val] = g2n_val  # type: ignore[index]
@@ -414,9 +485,10 @@ def _parse_levers_sheet(
 
     raw: dict[str, dict[str, Any]] = {}
     for row in ws.iter_rows(min_row=2, values_only=True):
-        def _cell(col: str) -> Any:
+
+        def _cell(col: str, _row: Any = row) -> Any:
             idx = cols.get(col)
-            return row[idx - 1] if idx and idx - 1 < len(row) else None
+            return _row[idx - 1] if idx and idx - 1 < len(_row) else None
 
         sc_name = _to_str(_cell("scenario_name"))
         lever_type = _to_str(_cell("lever_type"))
@@ -425,18 +497,31 @@ def _parse_levers_sheet(
         if sc_name not in valid_scenario_names:
             continue
         if lever_type not in VALID_LEVER_TYPES:
-            errors.append(ImportError(
-                sheet="Levers", row=None, column="lever_type",
-                code="INVALID_LEVER_TYPE",
-                message=f"Type de levier '{lever_type}' inconnu. Valeurs : {sorted(VALID_LEVER_TYPES)}",
-                raw_value=lever_type,
-            ))
+            errors.append(
+                ImportError(
+                    sheet="Levers",
+                    row=None,
+                    column="lever_type",
+                    code="INVALID_LEVER_TYPE",
+                    message=(
+                        f"Type de levier '{lever_type}' inconnu. "
+                        f"Valeurs : {sorted(VALID_LEVER_TYPES)}"
+                    ),
+                    raw_value=lever_type,
+                )
+            )
             continue
 
-        d = raw.setdefault(sc_name, {
-            "withdrawals": [], "price_floors": {}, "delayed_launches": {},
-            "de_opt_in": False, "gr_clawback_stress": False,
-        })
+        d = raw.setdefault(
+            sc_name,
+            {
+                "withdrawals": [],
+                "price_floors": {},
+                "delayed_launches": {},
+                "de_opt_in": False,
+                "gr_clawback_stress": False,
+            },
+        )
         country = _to_str(_cell("country_code")) or ""
         value = _cell("value")
 
@@ -461,6 +546,7 @@ def _parse_levers_sheet(
 
 # ── Cross-reference + business validation ────────────────────────────────────
 
+
 def _validate_cross_references(
     scenarios: list[dict[str, Any]],
     country_data_by_sc: dict[str, list[tuple[str, dict]]],
@@ -470,29 +556,44 @@ def _validate_cross_references(
 ) -> None:
     baseline_count = sum(1 for s in scenarios if s.get("is_baseline"))
     if baseline_count > 1:
-        errors.append(ImportError(
-            sheet="Scenarios", row=None, column="is_baseline",
-            code="MULTIPLE_BASELINES",
-            message=f"{baseline_count} scénarios marqués is_baseline=TRUE. Un seul autorisé.",
-        ))
+        errors.append(
+            ImportError(
+                sheet="Scenarios",
+                row=None,
+                column="is_baseline",
+                code="MULTIPLE_BASELINES",
+                message=f"{baseline_count} scénarios marqués is_baseline=TRUE. Un seul autorisé.",
+            )
+        )
     if not scenarios:
-        warnings.append(ImportError(
-            sheet="Scenarios", row=None, column=None,
-            code="NO_SCENARIOS",
-            message="Aucun scénario dans le fichier. L'import créera l'asset sans scénario.",
-        ))
+        warnings.append(
+            ImportError(
+                sheet="Scenarios",
+                row=None,
+                column=None,
+                code="NO_SCENARIOS",
+                message="Aucun scénario dans le fichier. L'import créera l'asset sans scénario.",
+            )
+        )
 
     # G2N references must point to a country in CountryData
     for sc_name, country_g2n in g2n_by_sc.items():
         cd_countries = {cc for cc, _ in country_data_by_sc.get(sc_name, [])}
         for cc in country_g2n:
             if cc not in cd_countries:
-                errors.append(ImportError(
-                    sheet="G2N_TimeSeries", row=None, column="country_code",
-                    code="UNKNOWN_COUNTRY_REF",
-                    message=f"Pays '{cc}' dans G2N_TimeSeries absent de CountryData pour le scénario '{sc_name}'",
-                    raw_value=cc,
-                ))
+                errors.append(
+                    ImportError(
+                        sheet="G2N_TimeSeries",
+                        row=None,
+                        column="country_code",
+                        code="UNKNOWN_COUNTRY_REF",
+                        message=(
+                            f"Pays '{cc}' dans G2N_TimeSeries absent de CountryData "
+                            f"pour le scénario '{sc_name}'"
+                        ),
+                        raw_value=cc,
+                    )
+                )
 
 
 def _detect_real_pricing_data(
@@ -504,19 +605,24 @@ def _detect_real_pricing_data(
         for _, cd in cd_list:
             lp = cd.get("list_price")
             if lp and lp > 100_000:
-                return [ImportError(
-                    sheet="CountryData", row=None, column="list_price",
-                    code="REAL_PRICING_DETECTED",
-                    message=(
-                        "Des prix >100 000$ ont été détectés. En mode Trial, "
-                        "seules des données illustratives sont autorisées."
-                    ),
-                    raw_value=lp,
-                )]
+                return [
+                    ImportError(
+                        sheet="CountryData",
+                        row=None,
+                        column="list_price",
+                        code="REAL_PRICING_DETECTED",
+                        message=(
+                            "Des prix >100 000$ ont été détectés. En mode Trial, "
+                            "seules des données illustratives sont autorisées."
+                        ),
+                        raw_value=lp,
+                    )
+                ]
     return []
 
 
 # ── Summary ───────────────────────────────────────────────────────────────────
+
 
 def _summarize(scenarios: list[dict], cd_by_sc: dict) -> dict[str, Any]:
     total_cd = sum(len(v) for v in cd_by_sc.values())
@@ -528,6 +634,7 @@ def _summarize(scenarios: list[dict], cd_by_sc: dict) -> dict[str, Any]:
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
+
 
 def parse_xlsx(
     file_bytes: bytes,
@@ -542,23 +649,33 @@ def parse_xlsx(
         wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
     except Exception as exc:
         return ImportPlan(
-            mode=mode, parsed=None,
-            errors=[ImportError(
-                sheet="(file)", row=None, column=None,
-                code="INVALID_XLSX",
-                message=f"Fichier XLSX invalide ou corrompu : {exc}",
-            )],
+            mode=mode,
+            parsed=None,
+            errors=[
+                ImportError(
+                    sheet="(file)",
+                    row=None,
+                    column=None,
+                    code="INVALID_XLSX",
+                    message=f"Fichier XLSX invalide ou corrompu : {exc}",
+                )
+            ],
         )
 
     sheet_names = set(wb.sheetnames)
     if mode == ImportMode.CREATE_NEW and "Overview" not in sheet_names:
         return ImportPlan(
-            mode=mode, parsed=None,
-            errors=[ImportError(
-                sheet="(file)", row=None, column=None,
-                code="MISSING_REQUIRED_SHEET",
-                message="L'onglet 'Overview' est requis pour le mode create_new",
-            )],
+            mode=mode,
+            parsed=None,
+            errors=[
+                ImportError(
+                    sheet="(file)",
+                    row=None,
+                    column=None,
+                    code="MISSING_REQUIRED_SHEET",
+                    message="L'onglet 'Overview' est requis pour le mode create_new",
+                )
+            ],
         )
 
     # Parse each sheet
@@ -590,8 +707,13 @@ def parse_xlsx(
         levers_by_sc = _parse_levers_sheet(wb["Levers"], valid_names, errors)
 
     if errors:
-        return ImportPlan(mode=mode, parsed=None, errors=errors, warnings=warnings,
-                          summary=_summarize(scenarios_data, cd_by_sc))
+        return ImportPlan(
+            mode=mode,
+            parsed=None,
+            errors=errors,
+            warnings=warnings,
+            summary=_summarize(scenarios_data, cd_by_sc),
+        )
 
     # Merge G2N time series into country data dicts
     for sc_name, cd_list in cd_by_sc.items():
@@ -604,8 +726,13 @@ def parse_xlsx(
     # Cross-reference validation
     _validate_cross_references(scenarios_data, cd_by_sc, g2n_by_sc, errors, warnings)
     if errors:
-        return ImportPlan(mode=mode, parsed=None, errors=errors, warnings=warnings,
-                          summary=_summarize(scenarios_data, cd_by_sc))
+        return ImportPlan(
+            mode=mode,
+            parsed=None,
+            errors=errors,
+            warnings=warnings,
+            summary=_summarize(scenarios_data, cd_by_sc),
+        )
 
     # Build ParsedScenario objects with Pydantic validation
     parsed_scenarios: list[ParsedScenario] = []
@@ -619,11 +746,15 @@ def parse_xlsx(
             )
         except ValidationError as exc:
             for e in exc.errors():
-                errors.append(ImportError(
-                    sheet="Scenarios", row=None, column=str(e["loc"][-1] if e["loc"] else "?"),
-                    code=e["type"].upper().replace("-", "_"),
-                    message=f"Scénario '{name}' regulations : {e['msg']}",
-                ))
+                errors.append(
+                    ImportError(
+                        sheet="Scenarios",
+                        row=None,
+                        column=str(e["loc"][-1] if e["loc"] else "?"),
+                        code=e["type"].upper().replace("-", "_"),
+                        message=f"Scénario '{name}' regulations : {e['msg']}",
+                    )
+                )
             continue
 
         country_data: list[tuple[str, CountryDataInput]] = []
@@ -632,28 +763,38 @@ def parse_xlsx(
                 country_data.append((cc, CountryDataInput(**cd_dict)))
             except ValidationError as exc:
                 for e in exc.errors():
-                    errors.append(ImportError(
-                        sheet="CountryData", row=None,
-                        column=str(e["loc"][-1] if e["loc"] else "?"),
-                        code=e["type"].upper().replace("-", "_"),
-                        message=f"Pays '{cc}', scénario '{name}' : {e['msg']}",
-                        raw_value=cd_dict.get(str(e["loc"][-1]) if e["loc"] else ""),
-                    ))
+                    errors.append(
+                        ImportError(
+                            sheet="CountryData",
+                            row=None,
+                            column=str(e["loc"][-1] if e["loc"] else "?"),
+                            code=e["type"].upper().replace("-", "_"),
+                            message=f"Pays '{cc}', scénario '{name}' : {e['msg']}",
+                            raw_value=cd_dict.get(str(e["loc"][-1]) if e["loc"] else ""),
+                        )
+                    )
 
         levers = levers_by_sc.get(name, LeversConfig())
-        parsed_scenarios.append(ParsedScenario(
-            name=name,
-            description=sc_data.get("description"),
-            is_baseline=sc_data.get("is_baseline", False),
-            regulations=regs,
-            levers=levers,
-            country_data=country_data,
-            cascade_config=sc_data.get("cascade_config", {}),
-        ))
+        parsed_scenarios.append(
+            ParsedScenario(
+                name=name,
+                description=sc_data.get("description"),
+                is_baseline=sc_data.get("is_baseline", False),
+                regulations=regs,
+                levers=levers,
+                country_data=country_data,
+                cascade_config=sc_data.get("cascade_config", {}),
+            )
+        )
 
     if errors:
-        return ImportPlan(mode=mode, parsed=None, errors=errors, warnings=warnings,
-                          summary=_summarize(scenarios_data, cd_by_sc))
+        return ImportPlan(
+            mode=mode,
+            parsed=None,
+            errors=errors,
+            warnings=warnings,
+            summary=_summarize(scenarios_data, cd_by_sc),
+        )
 
     assert asset_payload is not None
     parsed = ParsedAsset(
@@ -665,12 +806,16 @@ def parse_xlsx(
 
     warnings.extend(_detect_real_pricing_data(scenarios_data, cd_by_sc))
     return ImportPlan(
-        mode=mode, parsed=parsed, errors=[], warnings=warnings,
+        mode=mode,
+        parsed=parsed,
+        errors=[],
+        warnings=warnings,
         summary=_summarize(scenarios_data, cd_by_sc),
     )
 
 
 # ── DB execution ──────────────────────────────────────────────────────────────
+
 
 async def execute_import_plan(
     plan: ImportPlan,
@@ -748,6 +893,7 @@ async def execute_import_plan(
         existing = existing_by_name.get(ps.name.lower())
         if existing:
             from app.schemas.scenario import ScenarioUpdate
+
             sc_update = ScenarioUpdate(
                 name=ps.name,
                 description=ps.description,
@@ -760,8 +906,12 @@ async def execute_import_plan(
         else:
             await assert_can_create_scenario(asset.id, tenant_id, tier, trial_expires_at, db)
             sc_payload = ScenarioCreate(
-                name=ps.name, description=ps.description, is_baseline=ps.is_baseline,
-                regulations=ps.regulations, levers=ps.levers, cascade_config=ps.cascade_config,
+                name=ps.name,
+                description=ps.description,
+                is_baseline=ps.is_baseline,
+                regulations=ps.regulations,
+                levers=ps.levers,
+                cascade_config=ps.cascade_config,
             )
             scenario = await scenario_repo.create(asset.id, tenant_id, user_id, sc_payload)
         scenario_ids.append(scenario.id)
@@ -778,6 +928,7 @@ async def execute_import_plan(
 
 # ── Template generation ───────────────────────────────────────────────────────
 
+
 def build_import_template(asset_name: str = "My Asset") -> bytes:
     """Generate an empty XLSX import template with all 5 sheets and a sample row."""
     from openpyxl.styles import Font, PatternFill
@@ -792,16 +943,29 @@ def build_import_template(asset_name: str = "My Asset") -> bytes:
             c.fill = _HDR_FILL
 
     sample_meta: dict[str, Any] = {
-        "asset_id": "", "updated_at": "",
-        "name": asset_name, "therapeutic_area": "", "modality": "", "indication": "",
-        "us_list_price": 200000, "us_net_share": 0.75,
-        "launch_year": 2027, "peak_year": 2031, "loe_year": 2039,
-        "cogs_percent": 0.15, "discount_rate": 0.10,
-        "us_patient_population": 50000, "ex_us_patient_population": 30000,
-        "peak_capture_rate": 0.50, "part_b_share": 0.50, "ramp_years": 4,
+        "asset_id": "",
+        "updated_at": "",
+        "name": asset_name,
+        "therapeutic_area": "",
+        "modality": "",
+        "indication": "",
+        "us_list_price": 200000,
+        "us_net_share": 0.75,
+        "launch_year": 2027,
+        "peak_year": 2031,
+        "loe_year": 2039,
+        "cogs_percent": 0.15,
+        "discount_rate": 0.10,
+        "us_patient_population": 50000,
+        "ex_us_patient_population": 30000,
+        "peak_capture_rate": 0.50,
+        "part_b_share": 0.50,
+        "ramp_years": 4,
     }
     sample_sc = {
-        "name": "Scenario 1", "description": "", "is_baseline": True,
+        "name": "Scenario 1",
+        "description": "",
+        "is_baseline": True,
         "regulations": {
             "generous": {"active": False, "year": None, "medicaid_share": 0.07},
             "guard": {"active": False, "year": None, "submit_method_ii": False, "phase_in": None},
@@ -809,14 +973,25 @@ def build_import_template(asset_name: str = "My Asset") -> bytes:
         },
         "cascade_config": {"enabled": True, "max_iter": 10},
         "levers": {
-            "withdrawals": [], "price_floors": {}, "delayed_launches": {},
-            "de_opt_in": False, "gr_clawback_stress": False,
+            "withdrawals": [],
+            "price_floors": {},
+            "delayed_launches": {},
+            "de_opt_in": False,
+            "gr_clawback_stress": False,
         },
-        "country_data": [{
-            "country_code": "US", "list_price": 200000, "net_price": 150000,
-            "volume": 0.5, "launched": True, "launch_year": 2027,
-            "withdrawn": False, "g2n_ratio": 0.75, "g2n_time_series": {"2028": 0.73, "2029": 0.71},
-        }],
+        "country_data": [
+            {
+                "country_code": "US",
+                "list_price": 200000,
+                "net_price": 150000,
+                "volume": 0.5,
+                "launched": True,
+                "launch_year": 2027,
+                "withdrawn": False,
+                "g2n_ratio": 0.75,
+                "g2n_time_series": {"2028": 0.73, "2029": 0.71},
+            }
+        ],
     }
 
     return _build_asset_full_xlsx(sample_meta, [sample_sc])

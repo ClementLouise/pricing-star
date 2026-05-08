@@ -1,4 +1,5 @@
 """Audit Pack download endpoints — simulation-level and asset-level ZIP exports."""
+
 from __future__ import annotations
 
 import uuid
@@ -18,7 +19,6 @@ from app.repos.audit import AuditRepo
 from app.repos.scenario import CountryDataRepo, ScenarioRepo
 from app.repos.simulation_result import SimulationResultRepo
 from app.services.audit_pack import (
-    OVERVIEW_KEYS,
     ExportTooLargeError,
     build_asset_pack,
     build_simulation_pack,
@@ -40,9 +40,15 @@ def _sim_to_dict(sim: object) -> dict:
         "method_i_value": float(sim.method_i_value) if sim.method_i_value is not None else None,  # type: ignore[attr-defined]
         "method_i_anchor": sim.method_i_anchor,  # type: ignore[attr-defined]
         "method_ii_value": float(sim.method_ii_value) if sim.method_ii_value is not None else None,  # type: ignore[attr-defined]
-        "applicable_benchmark": float(sim.applicable_benchmark) if sim.applicable_benchmark is not None else None,  # type: ignore[attr-defined]
-        "per_unit_rebate": float(sim.per_unit_rebate) if sim.per_unit_rebate is not None else None,  # type: ignore[attr-defined]
-        "effective_us_net": float(sim.effective_us_net) if sim.effective_us_net is not None else None,  # type: ignore[attr-defined]
+        "applicable_benchmark": (  # type: ignore[attr-defined]
+            float(sim.applicable_benchmark) if sim.applicable_benchmark is not None else None
+        ),
+        "per_unit_rebate": (  # type: ignore[attr-defined]
+            float(sim.per_unit_rebate) if sim.per_unit_rebate is not None else None
+        ),
+        "effective_us_net": (  # type: ignore[attr-defined]
+            float(sim.effective_us_net) if sim.effective_us_net is not None else None
+        ),
         "cascade_iterations": sim.cascade_iterations,  # type: ignore[attr-defined]
         "cascade_converged": sim.cascade_converged,  # type: ignore[attr-defined]
         "final_prices": sim.final_prices or {},  # type: ignore[attr-defined]
@@ -170,7 +176,9 @@ async def simulation_audit_pack(
             generated_by=str(user.id),
         )
     except ExportTooLargeError as exc:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)
+        ) from exc
 
     await AuditRepo(db).log(
         tenant_id=user.tenant_id,
@@ -238,7 +246,9 @@ async def asset_audit_pack(
             scenario_configs=scenario_configs,
         )
     except ExportTooLargeError as exc:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)
+        ) from exc
 
     await AuditRepo(db).log(
         tenant_id=user.tenant_id,

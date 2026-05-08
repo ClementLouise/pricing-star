@@ -30,8 +30,13 @@ async def _get_management_token() -> str:
         return _token_cache  # type: ignore[return-value]
 
 
-async def set_user_tenant_metadata(auth0_user_id: str, tenant_id: uuid.UUID, tenant_tier: str) -> None:
-    """Write tenant_id and tenant_tier into Auth0 app_metadata so custom claims action picks them up."""
+async def set_user_tenant_metadata(
+    auth0_user_id: str, tenant_id: uuid.UUID, tenant_tier: str
+) -> None:
+    """Write tenant_id and tenant_tier into Auth0 app_metadata.
+
+    Ensures the custom claims action picks them up on next token issue.
+    """
     token = await _get_management_token()
     async with httpx.AsyncClient() as client:
         resp = await client.patch(

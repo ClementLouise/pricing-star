@@ -1,7 +1,7 @@
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Callable
+from datetime import UTC, datetime
 
 import bcrypt
 import httpx
@@ -65,9 +65,11 @@ async def _auth_via_api_key(token: str, db: AsyncSession) -> TenantContext:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
     if matched.revoked_at is not None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has been revoked")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has been revoked"
+        )
 
-    if matched.expires_at and matched.expires_at < datetime.now(timezone.utc):
+    if matched.expires_at and matched.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key has expired")
 
     tenant = await db.get(Tenant, matched.tenant_id)
@@ -100,11 +102,15 @@ async def require_auth(
         )
     except JWTError as exc:
         log.warning("jwt_validation_failed", error=str(exc))
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        ) from exc
 
     tenant_id_raw = payload.get(f"{CLAIMS_NS}/tenant_id")
     if not tenant_id_raw:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tenant context in token")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="No tenant context in token"
+        )
 
     trial_expires_raw = payload.get(f"{CLAIMS_NS}/trial_expires_at")
 
@@ -120,7 +126,10 @@ async def get_current_user(
     ctx: TenantContext = Depends(require_auth),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Resolve User record from DB. Raises 401 if not found (e.g. webhook-created tenant not yet synced)."""
+    """Resolve User record from DB.
+
+    Raises 401 if not found (e.g. webhook-created tenant not yet synced).
+    """
     result = await db.execute(
         select(User).where(
             User.auth0_user_id == ctx.auth0_user_id,
@@ -136,6 +145,7 @@ async def get_current_user(
 
 def require_role(allowed_roles: list[str]) -> Callable:
     """FastAPI dependency factory for RBAC — per PRD §08 permission matrix."""
+
     async def _check(user: User = Depends(get_current_user)) -> User:
         if user.role not in allowed_roles:
             raise HTTPException(

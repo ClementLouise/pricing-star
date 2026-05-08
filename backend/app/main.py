@@ -3,10 +3,10 @@ from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.api_keys import router as api_keys_router
+from app.api.asset_import import router as asset_import_router
 from app.api.assets import router as assets_router
 from app.api.audit_logs import router as audit_logs_router
 from app.api.audit_pack import router as audit_pack_router
-from app.api.asset_import import router as asset_import_router
 from app.api.data_export import router as data_export_router
 from app.api.reference import router as reference_router
 from app.api.scenarios import router as scenarios_router
@@ -21,7 +21,9 @@ configure_logging(settings.environment)
 log = get_logger(__name__)
 
 if settings.sentry_dsn:
-    sentry_sdk.init(dsn=settings.sentry_dsn, environment=settings.environment, traces_sample_rate=0.1)
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn, environment=settings.environment, traces_sample_rate=0.1
+    )
 
 app = FastAPI(
     title="Pricing Star API",
@@ -48,8 +50,11 @@ async def security_headers(request: Request, call_next: object) -> Response:
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     if settings.environment == "production":
-        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains; preload"
+        )
     return response
+
 
 _API = "/api"
 app.include_router(webhooks_router)
@@ -78,8 +83,10 @@ async def health() -> dict[str, str]:
 @app.get("/health/ready", tags=["ops"])
 async def health_ready() -> dict[str, str]:
     """Readiness probe — verifies DB connectivity before accepting traffic."""
-    from app.database import engine
     from sqlalchemy import text
+
+    from app.database import engine
+
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -87,7 +94,8 @@ async def health_ready() -> dict[str, str]:
     except Exception as exc:
         log.error("readiness_probe_failed", error=str(exc))
         from fastapi import HTTPException
-        raise HTTPException(status_code=503, detail="Database not reachable")
+
+        raise HTTPException(status_code=503, detail="Database not reachable") from exc
 
 
 @app.get("/api/me", tags=["auth"])

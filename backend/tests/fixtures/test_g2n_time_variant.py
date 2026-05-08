@@ -11,18 +11,19 @@ Three layers tested:
 
 import pytest
 
-from app.engine.npv import compute_npv, resolve_g2n
-from app.engine.types import (
-    AssetConfig,
-    CountryData as EngineCountryData,
-    ScenarioConfig,
-)
 from app.engine.methods import (
     calculate_guard_method_i,
     calculate_guard_method_ii,
     calculate_guard_rebate,
 )
-
+from app.engine.npv import compute_npv, resolve_g2n
+from app.engine.types import (
+    AssetConfig,
+    ScenarioConfig,
+)
+from app.engine.types import (
+    CountryData as EngineCountryData,
+)
 
 # ─── Shared asset config ──────────────────────────────────────────────────────
 
@@ -80,6 +81,7 @@ SCENARIO_STATIC_BEST = ScenarioConfig(
 
 # ─── Helper: replicate service per-year rebate schedule logic ─────────────────
 
+
 def _build_us_net_schedule(
     scenario_cfg: ScenarioConfig,
     use_method_ii: bool = True,
@@ -117,6 +119,7 @@ def _build_us_net_schedule(
 
 # ─── Layer 1: compute_npv correctly applies us_net_schedule ──────────────────
 
+
 def test_compute_npv_applies_schedule_per_year():
     """compute_npv must use us_net_schedule[year] for each year's effective US net."""
     # Explicit schedule: declining effective US net
@@ -128,31 +131,37 @@ def test_compute_npv_applies_schedule_per_year():
         2031: 65_000,
     }
     result = compute_npv(
-        COUNTRY_PRICES, ASSET, SCENARIO_TIME_VARIANT,
+        COUNTRY_PRICES,
+        ASSET,
+        SCENARIO_TIME_VARIANT,
         us_net_schedule=explicit_schedule,
     )
     bd = {row.year: row for row in result.yearly_breakdown}
 
     for year, expected_net in explicit_schedule.items():
         row = bd[year]
-        assert row.effective_us_net == pytest.approx(expected_net, rel=1e-9), (
-            f"Year {year}: effective_us_net expected {expected_net}, got {row.effective_us_net}"
-        )
+        assert row.effective_us_net == pytest.approx(
+            expected_net, rel=1e-9
+        ), f"Year {year}: effective_us_net expected {expected_net}, got {row.effective_us_net}"
         expected_rebate = US_NET - expected_net
-        assert row.rebate_per_unit == pytest.approx(expected_rebate, rel=1e-9), (
-            f"Year {year}: rebate expected {expected_rebate}, got {row.rebate_per_unit}"
-        )
+        assert row.rebate_per_unit == pytest.approx(
+            expected_rebate, rel=1e-9
+        ), f"Year {year}: rebate expected {expected_rebate}, got {row.rebate_per_unit}"
 
 
 def test_compute_npv_schedule_takes_precedence_over_override():
     """us_net_schedule must take precedence over us_net_override."""
-    schedule = {y: 80_000 for y in range(ASSET.launch_year, ASSET.launch_year + HORIZON)}
+    schedule = dict.fromkeys(range(ASSET.launch_year, ASSET.launch_year + HORIZON), 80000)
     result_schedule = compute_npv(
-        COUNTRY_PRICES, ASSET, SCENARIO_TIME_VARIANT,
+        COUNTRY_PRICES,
+        ASSET,
+        SCENARIO_TIME_VARIANT,
         us_net_schedule=schedule,
     )
     result_override = compute_npv(
-        COUNTRY_PRICES, ASSET, SCENARIO_TIME_VARIANT,
+        COUNTRY_PRICES,
+        ASSET,
+        SCENARIO_TIME_VARIANT,
         us_net_override=80_000,
     )
     # Both should give the same NPV since effective US net is the same
@@ -163,21 +172,22 @@ def test_rebate_and_effective_us_net_are_consistent():
     """rebate_per_unit + effective_us_net must always equal US_NET (no schedule)."""
     result = compute_npv(COUNTRY_PRICES, ASSET, SCENARIO_TIME_VARIANT)
     for row in result.yearly_breakdown:
-        assert row.effective_us_net + row.rebate_per_unit == pytest.approx(US_NET, rel=1e-6), (
-            f"Year {row.year}: {row.effective_us_net:.2f} + {row.rebate_per_unit:.2f} != {US_NET}"
-        )
+        assert row.effective_us_net + row.rebate_per_unit == pytest.approx(
+            US_NET, rel=1e-6
+        ), f"Year {row.year}: {row.effective_us_net:.2f} + {row.rebate_per_unit:.2f} != {US_NET}"
 
 
 # ─── Layer 2: resolve_g2n returns correct per-year values ────────────────────
+
 
 def test_resolve_g2n_returns_series_value_for_each_year():
     """resolve_g2n must return the time series value for covered years."""
     for year_str, expected_g2n in DE_G2N_SERIES.items():
         year = int(year_str)
         g2n = resolve_g2n("DE", year, SCENARIO_TIME_VARIANT, {})
-        assert g2n == pytest.approx(expected_g2n, rel=1e-9), (
-            f"Year {year}: expected G2N={expected_g2n}, got {g2n}"
-        )
+        assert g2n == pytest.approx(
+            expected_g2n, rel=1e-9
+        ), f"Year {year}: expected G2N={expected_g2n}, got {g2n}"
 
 
 def test_resolve_g2n_falls_back_to_g2n_ratio_for_uncovered_year():
@@ -196,15 +206,16 @@ def test_g2n_time_series_produces_different_net_prices_each_year():
 
     # Each year should be different (monotonically decreasing as G2N erodes)
     values = list(net_prices_per_year.values())
-    assert values == sorted(values, reverse=True), (
-        f"Net prices should decrease year-over-year: {net_prices_per_year}"
-    )
-    assert len(set(round(v, 2) for v in values)) == len(values), (
-        "All yearly net prices should be distinct"
-    )
+    assert values == sorted(
+        values, reverse=True
+    ), f"Net prices should decrease year-over-year: {net_prices_per_year}"
+    assert len({round(v, 2) for v in values}) == len(
+        values
+    ), "All yearly net prices should be distinct"
 
 
 # ─── Layer 3: time-variant vs static produces different NPV ──────────────────
+
 
 def test_time_variant_method_ii_differs_from_static_best():
     """Method II benchmark must differ year-over-year between time-variant and static G2N.
@@ -238,14 +249,15 @@ def test_time_variant_method_ii_differs_from_static_best():
 
     # In erosion years (2028–2031), DE G2N is lower for time-variant → lower Method II
     differing_years = [
-        y for y in range(2028, 2032)
+        y
+        for y in range(2028, 2032)
         if method_ii_variant[y] is not None
         and method_ii_static[y] is not None
         and abs(method_ii_variant[y] - method_ii_static[y]) > 1e-6  # type: ignore[operator]
     ]
-    assert len(differing_years) > 0, (
-        f"Method II should differ in erosion years; variant={method_ii_variant}, static={method_ii_static}"
-    )
+    assert (
+        len(differing_years) > 0
+    ), f"Method II should differ in erosion years; variant={method_ii_variant}, static={method_ii_static}"
 
 
 def test_time_variant_g2n_changes_npv_relative_to_static():
@@ -254,14 +266,20 @@ def test_time_variant_g2n_changes_npv_relative_to_static():
     schedule_static = _build_us_net_schedule(SCENARIO_STATIC_BEST)
 
     result_variant = compute_npv(
-        COUNTRY_PRICES, ASSET, SCENARIO_TIME_VARIANT, us_net_schedule=schedule_variant,
+        COUNTRY_PRICES,
+        ASSET,
+        SCENARIO_TIME_VARIANT,
+        us_net_schedule=schedule_variant,
     )
     result_static = compute_npv(
-        COUNTRY_PRICES, ASSET, SCENARIO_STATIC_BEST, us_net_schedule=schedule_static,
+        COUNTRY_PRICES,
+        ASSET,
+        SCENARIO_STATIC_BEST,
+        us_net_schedule=schedule_static,
     )
 
     # The NPVs must differ (time-variant G2N erodes ex-US revenue — but note: US
     # rebate schedule dominates here; focus is on the fact they're not equal)
-    assert result_variant.npv != pytest.approx(result_static.npv, rel=1e-6), (
-        "Time-variant and static G2N should produce different NPVs"
-    )
+    assert result_variant.npv != pytest.approx(
+        result_static.npv, rel=1e-6
+    ), "Time-variant and static G2N should produce different NPVs"
