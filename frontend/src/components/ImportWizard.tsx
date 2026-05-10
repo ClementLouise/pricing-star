@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Upload, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Download, Upload, XCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -160,6 +160,23 @@ export function ImportWizard({
           </div>
         )}
 
+        {/* Template download panel */}
+        <div className="flex items-center justify-between rounded border border-border bg-panel-elev px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-text-primary">Modèle Excel</p>
+            <p className="text-xs text-text-secondary mt-0.5">Téléchargez le template et remplissez-le avant d'importer</p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={downloadingTemplate}
+            onClick={handleDownloadTemplate}
+          >
+            <Download size={14} />
+            Télécharger
+          </Button>
+        </div>
+
         {/* File drop zone */}
         <div
           className="rounded border-2 border-dashed border-border hover:border-navy-500 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 py-8 px-4 text-center"
@@ -189,17 +206,6 @@ export function ImportWizard({
           onChange={(e) => { const f = e.target.files?.[0]; if (f) setFile(f); }}
         />
 
-        {/* Template download link */}
-        <p className="text-xs text-text-tertiary text-center">
-          Pas encore de fichier ?{" "}
-          <button
-            className="text-info hover:underline"
-            onClick={handleDownloadTemplate}
-            disabled={downloadingTemplate}
-          >
-            {downloadingTemplate ? "Téléchargement…" : "Télécharger le modèle Excel"}
-          </button>
-        </p>
       </div>
 
       {/* Footer */}

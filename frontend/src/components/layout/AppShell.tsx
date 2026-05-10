@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -43,37 +43,46 @@ function UserMenu() {
   const label = user?.name ?? user?.email ?? "Account";
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="flex items-center gap-2">
+      <div className="relative" ref={ref}>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary transition-colors"
+        >
+          {label}
+          <ChevronDown size={12} className="text-text-tertiary" />
+        </button>
+        {open && (
+          <div className="absolute right-0 top-full mt-1 w-52 bg-panel border border-border rounded-md shadow-md z-50 overflow-hidden">
+            <button
+              onClick={() => { navigate("/home"); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-panel-elev transition-colors"
+            >
+              Revoir l'introduction
+            </button>
+            <button
+              onClick={() => { navigate("/settings/my-data"); setOpen(false); }}
+              className="w-full text-left px-4 py-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-panel-elev transition-colors"
+            >
+              Mes données
+            </button>
+            <div className="border-t border-border" />
+            <button
+              onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+              className="w-full text-left px-4 py-2.5 text-xs text-text-tertiary hover:text-text-primary hover:bg-panel-elev transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        )}
+      </div>
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary transition-colors"
+        onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+        title="Se déconnecter"
+        className="text-text-tertiary hover:text-text-primary transition-colors"
       >
-        {label}
-        <ChevronDown size={12} className="text-text-tertiary" />
+        <LogOut size={14} />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-52 bg-panel border border-border rounded-md shadow-md z-50 overflow-hidden">
-          <button
-            onClick={() => { navigate("/home"); setOpen(false); }}
-            className="w-full text-left px-4 py-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-panel-elev transition-colors"
-          >
-            Revoir l'introduction
-          </button>
-          <button
-            onClick={() => { navigate("/settings/my-data"); setOpen(false); }}
-            className="w-full text-left px-4 py-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-panel-elev transition-colors"
-          >
-            Mes données
-          </button>
-          <div className="border-t border-border" />
-          <button
-            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-            className="w-full text-left px-4 py-2.5 text-xs text-text-tertiary hover:text-text-primary hover:bg-panel-elev transition-colors"
-          >
-            Sign out
-          </button>
-        </div>
-      )}
     </div>
   );
 }

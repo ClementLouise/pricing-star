@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +14,7 @@ import { ImportWizard } from "@/components/ImportWizard";
 import { formatCurrency, formatYear } from "@/lib/formatters";
 import { useApi } from "@/lib/api";
 import { useAssetList, useCreateAsset } from "@/hooks/useAssets";
+import { useDownloadTemplate } from "@/hooks/useDownloadTemplate";
 import type { Asset } from "@/types/api";
 
 function AssetRow({ asset }: { asset: Asset }) {
@@ -128,6 +130,7 @@ export default function AssetListPage() {
   const toast = useToast();
 
   const assets = data?.items ?? [];
+  const { downloadTemplate, downloading: downloadingTemplate } = useDownloadTemplate();
 
   async function handleExport() {
     setExporting(true);
@@ -173,6 +176,10 @@ export default function AssetListPage() {
               <Button variant="ghost" size="sm" loading={exporting} onClick={handleExport}>
                 Export
               </Button>
+              <Button variant="ghost" size="sm" loading={downloadingTemplate} onClick={() => downloadTemplate()}>
+                <Download size={14} />
+                Modèle Excel
+              </Button>
               <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
                 Import from Excel
               </Button>
@@ -194,6 +201,10 @@ export default function AssetListPage() {
               description="Create your first asset or import from Excel to start modeling pricing scenarios"
               action={
                 <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" loading={downloadingTemplate} onClick={() => downloadTemplate()}>
+                    <Download size={14} />
+                    Modèle Excel
+                  </Button>
                   <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
                     Import from Excel
                   </Button>

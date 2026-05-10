@@ -14,6 +14,7 @@ import { Panel } from "@/components/ui/Panel";
 import { Skeleton, SkeletonBlock } from "@/components/ui/Skeleton";
 import { useAssetList } from "@/hooks/useAssets";
 import { useRecentActivity } from "@/hooks/useDashboard";
+import { useDownloadTemplate } from "@/hooks/useDownloadTemplate";
 import { useDismissWelcome, useUserMe } from "@/hooks/useUser";
 import { formatActivity } from "@/lib/activity-format";
 import { formatRelativeTime } from "@/lib/formatters";
@@ -160,6 +161,7 @@ function PortfolioSummary({ assets }: { assets: Asset[] }) {
 
 function QuickActions({ assets, onImport }: { assets: Asset[]; onImport: () => void }) {
   const navigate = useNavigate();
+  const { downloadTemplate, downloading } = useDownloadTemplate();
   const lastAsset = assets
     .filter(a => !a.archived_at && !a.is_sample)
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0] ?? null;
@@ -169,9 +171,15 @@ function QuickActions({ assets, onImport }: { assets: Asset[]; onImport: () => v
       <h3 className="font-sans text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4">
         Actions rapides
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <ActionCard icon={Plus} title="Nouvel asset" description="Créer un médicament from scratch" onClick={() => navigate("/assets")} />
         <ActionCard icon={Upload} title="Importer Excel" description="Asset complet depuis un .xlsx" onClick={onImport} />
+        <ActionCard
+          icon={Download}
+          title={downloading ? "Téléchargement…" : "Modèle Excel"}
+          description="Template .xlsx pré-rempli"
+          onClick={() => downloadTemplate()}
+        />
         {lastAsset && (
           <ActionCard
             icon={ChevronRight}
@@ -234,6 +242,7 @@ function ActivityFeed({ items }: { items: ReturnType<typeof useRecentActivity>["
 
 function DidacticOnboarding({ onImport }: { onImport: () => void }) {
   const navigate = useNavigate();
+  const { downloadTemplate, downloading } = useDownloadTemplate();
   return (
     <Panel padding="none" className="border-l-4 border-gold-500 mb-10 px-6 py-6">
       <p className="font-mono text-xs text-gold-500 tracking-wider uppercase mb-2">Pour commencer</p>
@@ -244,7 +253,7 @@ function DidacticOnboarding({ onImport }: { onImport: () => void }) {
         Décrivez le médicament : prix US, indications, marchés visés. Comptez 5 minutes.
         Vous pourrez ensuite tester autant de scénarios MFN que vous voulez.
       </p>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button variant="primary" size="md" onClick={() => navigate("/assets")}>
           <Plus className="w-4 h-4" />
           Créer mon premier asset
@@ -252,6 +261,10 @@ function DidacticOnboarding({ onImport }: { onImport: () => void }) {
         <Button variant="secondary" size="md" onClick={onImport}>
           <Upload className="w-4 h-4" />
           Importer depuis Excel
+        </Button>
+        <Button variant="ghost" size="md" loading={downloading} onClick={() => downloadTemplate()}>
+          <Download className="w-4 h-4" />
+          Télécharger le modèle Excel
         </Button>
       </div>
     </Panel>
