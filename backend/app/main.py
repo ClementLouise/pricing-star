@@ -7,6 +7,7 @@ from app.api.asset_import import router as asset_import_router
 from app.api.assets import router as assets_router
 from app.api.audit_logs import router as audit_logs_router
 from app.api.audit_pack import router as audit_pack_router
+from app.api.dashboard import router as dashboard_router
 from app.api.data_export import router as data_export_router
 from app.api.reference import router as reference_router
 from app.api.scenarios import router as scenarios_router
@@ -64,6 +65,7 @@ app.include_router(scenarios_router, prefix=_API)
 app.include_router(simulations_router, prefix=_API)
 app.include_router(reference_router, prefix=_API)
 app.include_router(audit_logs_router, prefix=_API)
+app.include_router(dashboard_router, prefix=_API)
 app.include_router(users_router, prefix=_API)
 app.include_router(audit_pack_router, prefix=_API)
 app.include_router(data_export_router, prefix=_API)

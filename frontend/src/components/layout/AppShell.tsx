@@ -54,7 +54,7 @@ function UserMenu() {
       {open && (
         <div className="absolute right-0 top-full mt-1 w-52 bg-panel border border-border rounded-md shadow-md z-50 overflow-hidden">
           <button
-            onClick={() => { navigate("/welcome"); setOpen(false); }}
+            onClick={() => { navigate("/home"); setOpen(false); }}
             className="w-full text-left px-4 py-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-panel-elev transition-colors"
           >
             Revoir l'introduction
@@ -97,7 +97,7 @@ function Header() {
   return (
     <header className="flex items-center justify-between px-4 h-12 bg-panel border-b border-border shrink-0">
       <div className="flex items-center gap-3">
-        <Link to="/assets" className="flex items-center gap-0.5 text-sm font-semibold text-text-primary tracking-tight">
+        <Link to="/home" className="flex items-center gap-0.5 text-sm font-semibold text-text-primary tracking-tight">
           PRICING<span className="text-gold-500">STAR</span>
           <span className="text-gold-500 text-[8px] leading-none ml-0.5">●</span>
         </Link>

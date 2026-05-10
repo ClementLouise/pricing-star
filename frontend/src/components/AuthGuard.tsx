@@ -20,8 +20,8 @@ export default function AuthGuard() {
   // Wait for user data before deciding on redirect
   if (userLoading) return null;
 
-  if (userMe && !userMe.has_seen_welcome && location.pathname !== "/welcome") {
-    return <Navigate to="/welcome" replace />;
+  if (userMe && !userMe.has_seen_welcome && location.pathname !== "/home") {
+    return <Navigate to="/home" replace />;
   }
 
   return <Outlet />;
