@@ -54,7 +54,7 @@ function AssetRow({ asset }: { asset: Asset }) {
 
 function TableHeader() {
   return (
-    <div className="flex items-center gap-4 px-4 py-2 border-b border-border bg-panel-elev/60">
+    <div className="flex items-center gap-4 px-4 py-2 border-b border-border-soft bg-bg">
       <div className="flex-1 min-w-0">
         <p className="font-mono text-[10px] uppercase tracking-widest text-text-tertiary">Asset</p>
       </div>
@@ -151,10 +151,9 @@ export default function AssetListPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <header className="flex items-center justify-between px-6 h-12 bg-panel border-b border-border">
-        <span className="flex items-center gap-0.5 text-sm font-semibold text-text-primary tracking-tight">
-          PRICING<span className="text-gold-500">STAR</span>
-          <span className="text-gold-500 text-[8px] leading-none ml-0.5">●</span>
+      <header className="flex items-center justify-between px-8 border-b-2 border-text-primary bg-bg" style={{ height: 56 }}>
+        <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-text-primary font-medium">
+          PRICING <span className="text-gold-500">★</span> STAR
         </span>
       </header>
 

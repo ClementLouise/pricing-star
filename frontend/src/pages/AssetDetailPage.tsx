@@ -117,7 +117,7 @@ export default function AssetDetailPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-border/60">
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-border-soft">
         <div>
           <nav className="font-mono text-xs text-text-tertiary flex items-center gap-1.5">
             <button onClick={() => navigate("/assets")} className="hover:text-text-secondary transition-colors">
@@ -235,7 +235,7 @@ export default function AssetDetailPage() {
             onChange={(e) => setNewScenarioName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreateScenario()}
             placeholder="e.g. Full MFN 2029"
-            className="w-full h-9 rounded border border-border bg-panel-elev text-sm text-text-primary px-3 focus:outline-none focus:border-navy-500"
+            className="w-full h-9 rounded border border-border bg-panel text-sm text-text-primary px-3 focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
           />
         </div>
       </Modal>

@@ -266,11 +266,11 @@ export function AnchorAnalysisTab({ scenario }: AnchorAnalysisTabProps) {
                   }))}
                   margin={{ top: 2, right: 64, left: 8, bottom: 2 }}
                 >
-                  <CartesianGrid horizontal={false} stroke="#1e2a3a" />
+                  <CartesianGrid horizontal={false} stroke="#D5CCB6" />
                   <XAxis
                     type="number"
                     tickFormatter={(v: number) => formatCurrency(v, { compact: true })}
-                    tick={{ fontSize: 10, fill: "#6b7280" }}
+                    tick={{ fontSize: 10, fill: "#565045" }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -278,20 +278,20 @@ export function AnchorAnalysisTab({ scenario }: AnchorAnalysisTabProps) {
                     type="category"
                     dataKey="label"
                     width={110}
-                    tick={{ fontSize: 11, fill: "#94a3b8" }}
+                    tick={{ fontSize: 11, fill: "#565045" }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
                     formatter={(v: unknown) => [formatCurrency(Number(v), { compact: true }), "PPP-Adjusted"]}
-                    contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", fontSize: 12 }}
+                    contentStyle={{ background: "#F8F3E6", border: "1px solid #D5CCB6", fontSize: 12, color: "#161310" }}
                   />
                   <Bar dataKey="value" radius={[0, 3, 3, 0]}>
                     {rankingRows.map((entry) => (
                       <Cell
                         key={entry.country}
-                        fill={entry.is_anchor ? "#d97706" : "#2563eb"}
-                        opacity={entry.is_anchor ? 1 : 0.7}
+                        fill={entry.is_anchor ? "#B8860B" : "#1E40AF"}
+                        opacity={entry.is_anchor ? 1 : 0.75}
                       />
                     ))}
                   </Bar>
