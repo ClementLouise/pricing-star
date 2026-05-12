@@ -24,7 +24,7 @@ import type {
   SimulationResult,
 } from "@/types/api";
 
-const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000/api";
+export const BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000/api";
 
 export class ApiError extends Error {
   constructor(

@@ -18,15 +18,11 @@ export default function AuthGuard() {
   if (isLoading || !isAuthenticated) return null;
 
   // Block only on the very first load — background refetches must not unmount the tree
-  if (userLoading && !userMe) {
-    console.log('[AuthGuard] blocking — userLoading:', userLoading, 'userMe:', userMe);
-    return null;
-  }
+  if (userLoading && !userMe) return null;
 
   if (userMe && !userMe.has_seen_welcome && location.pathname !== "/home") {
     return <Navigate to="/home" replace />;
   }
 
-  console.log('[AuthGuard] rendering Outlet — userMe:', userMe?.id, 'path:', location.pathname);
   return <Outlet />;
 }

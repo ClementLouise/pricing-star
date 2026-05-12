@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth0 } from "@auth0/auth0-react";
 
+import { BASE } from "@/lib/api";
+
 export interface RecentActivityItem {
   id: string;
   user_id: string | null;
@@ -16,7 +18,7 @@ export function useRecentActivity(limit = 20) {
     enabled: isAuthenticated,
     queryFn: async (): Promise<RecentActivityItem[]> => {
       const token = await getAccessTokenSilently();
-      const res = await fetch(`/api/dashboard/recent-activity?limit=${limit}`, {
+      const res = await fetch(`${BASE}/dashboard/recent-activity?limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load activity");

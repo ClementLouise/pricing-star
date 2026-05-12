@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth0 } from "@auth0/auth0-react";
 
+import { BASE } from "@/lib/api";
+
 interface UserMe {
   id: string;
   name: string;
@@ -9,7 +11,7 @@ interface UserMe {
 }
 
 async function fetchMe(token: string): Promise<UserMe> {
-  const res = await fetch("/api/users/me", {
+  const res = await fetch(`${BASE}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch user");
@@ -17,7 +19,7 @@ async function fetchMe(token: string): Promise<UserMe> {
 }
 
 async function patchMe(token: string, payload: Partial<UserMe>): Promise<UserMe> {
-  const res = await fetch("/api/users/me", {
+  const res = await fetch(`${BASE}/users/me`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
