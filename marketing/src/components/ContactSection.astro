@@ -1,0 +1,33 @@
+---
+import Eyebrow from './Eyebrow.astro';
+import { copy } from '../content/copy';
+
+const { contact } = copy;
+---
+
+<section id="contact" class="bg-panel py-section-sm md:py-section">
+  <div class="max-w-container mx-auto px-8">
+    <div class="max-w-copy mx-auto reveal">
+
+      <Eyebrow text={contact.eyebrow} />
+
+      <h2 class="font-serif font-light text-display-sm md:text-[44px] text-text-primary leading-tight mb-10">
+        {contact.title}<br />
+        <em>{contact.titleItalic}</em>
+      </h2>
+
+      <p class="text-[17px] text-text-secondary leading-relaxed max-w-[580px] mb-12 reveal reveal-delay-1">
+        {contact.body}
+      </p>
+
+      <!-- Mail link — large, understated -->
+      <a
+        href={`mailto:${contact.email}`}
+        class="font-mono text-[15px] text-text-secondary hover:text-text-primary transition-colors duration-200 border-b border-border-soft hover:border-text-primary pb-0.5 reveal reveal-delay-2"
+      >
+        {contact.email} &nbsp;→
+      </a>
+
+    </div>
+  </div>
+</section>

@@ -1,0 +1,55 @@
+---
+import Eyebrow from './Eyebrow.astro';
+import { copy } from '../content/copy';
+
+const { capabilities } = copy;
+---
+
+<section class="bg-bg py-section-sm md:py-section">
+  <div class="max-w-container mx-auto px-8">
+
+    <!-- Header -->
+    <div class="mb-16 reveal">
+      <Eyebrow text={capabilities.eyebrow} />
+      <h2 class="font-serif font-light text-display-sm md:text-display-md text-text-primary">
+        {capabilities.title}<br />
+        <em>{capabilities.titleItalic}</em>
+      </h2>
+    </div>
+
+    <!-- Cards grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {capabilities.cards.map((card, i) => (
+        <div
+          class:list={[
+            "bg-panel border border-border-soft rounded-lg p-9 flex flex-col",
+            "hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(22,19,16,0.08)]",
+            "transition-all duration-300 ease-out reveal",
+            `reveal-delay-${i + 1}`,
+          ]}
+        >
+          <!-- Number -->
+          <span class="font-mono text-[13px] text-gold-500 font-medium mb-6">
+            {card.num}
+          </span>
+
+          <!-- Title -->
+          <h3 class="font-serif font-light italic text-[26px] md:text-[28px] text-text-primary leading-tight mb-5">
+            {card.title}
+          </h3>
+
+          <!-- Body -->
+          <p class="text-[15px] text-text-secondary leading-relaxed flex-1 mb-8">
+            {card.body}
+          </p>
+
+          <!-- Tag -->
+          <span class="font-mono text-[10px] uppercase tracking-mono-label text-text-tertiary">
+            {card.tag}
+          </span>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>

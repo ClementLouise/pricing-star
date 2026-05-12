@@ -1,0 +1,46 @@
+---
+import Eyebrow from './Eyebrow.astro';
+import { copy } from '../content/copy';
+
+const { engine } = copy;
+const titleLines = engine.title.split('\n');
+---
+
+<section class="bg-panel py-section-sm md:py-section">
+  <div class="max-w-container mx-auto px-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-16 items-start">
+
+      <!-- Left col (1/3) -->
+      <div class="reveal">
+        <Eyebrow text={engine.eyebrow} />
+        <h2 class="font-serif font-light italic text-[32px] md:text-[36px] text-text-primary leading-tight">
+          {titleLines.map((line, i) => (
+            <span>{line}{i < titleLines.length - 1 ? <br /> : null}</span>
+          ))}
+        </h2>
+      </div>
+
+      <!-- Right col (2/3) -->
+      <div class="md:col-span-2 reveal reveal-delay-1">
+        <p class="text-[16px] text-text-secondary leading-[1.55] mb-12 max-w-copy">
+          {engine.body}
+        </p>
+
+        <!-- Stats grid -->
+        <div class="grid grid-cols-3 gap-8 border-t border-border-soft pt-8">
+          {engine.stats.map((stat, i) => (
+            <div class:list={["reveal", `reveal-delay-${i + 1}`]}>
+              <p class="font-mono text-[28px] font-medium text-text-primary tabular-nums mb-1">
+                {stat.value}
+              </p>
+              <p class="font-mono text-[10px] uppercase tracking-mono-label text-text-tertiary">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
