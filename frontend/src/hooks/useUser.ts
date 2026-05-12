@@ -49,8 +49,8 @@ export function useDismissWelcome() {
       const token = await getAccessTokenSilently();
       return patchMe(token, { has_seen_welcome: true });
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["userMe"], data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userMe"] });
     },
   });
 }

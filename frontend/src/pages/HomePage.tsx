@@ -399,7 +399,6 @@ export default function HomePage() {
   const { data: activity, isLoading: activityLoading } = useRecentActivity(20);
   const { data: me } = useUserMe();
   const { mutateAsync: dismissAsync } = useDismissWelcome();
-  console.log('[HomePage] render — assetsLoading:', assetsLoading, 'activityLoading:', activityLoading, 'has_seen_welcome:', me?.has_seen_welcome);
   const [importOpen, setImportOpen] = useState(false);
   const didDismiss = useRef(false);
 

@@ -8,7 +8,6 @@ export default function AuthGuard() {
   const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
   const location = useLocation();
   const { data: userMe, isLoading: userLoading } = useUserMe();
-  console.log('[AuthGuard] render — isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'userLoading:', userLoading, 'path:', location.pathname);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -18,8 +17,8 @@ export default function AuthGuard() {
 
   if (isLoading || !isAuthenticated) return null;
 
-  // Wait for user data before deciding on redirect
-  if (userLoading) return null;
+  // Block only on the very first load — background refetches must not unmount the tree
+  if (userLoading && !userMe) return null;
 
   if (userMe && !userMe.has_seen_welcome && location.pathname !== "/home") {
     return <Navigate to="/home" replace />;
