@@ -1,0 +1,56 @@
+---
+import Eyebrow from './Eyebrow.astro';
+import { copy } from '../content/copy';
+
+const { hero } = copy;
+---
+
+<section class="min-h-screen flex items-center justify-center pt-14">
+  <div class="max-w-container mx-auto px-8 py-32">
+    <div class="max-w-copy-wide">
+      <!-- Eyebrow -->
+      <div class="hero-reveal">
+        <Eyebrow text={hero.eyebrow} />
+      </div>
+
+      <!-- Title -->
+      <h1 class="font-serif font-light text-display-lg md:text-display-xl text-text-primary mb-8 hero-reveal hero-d1">
+        {hero.titleLine1}<br />
+        <em>{hero.titleLine2}</em>
+      </h1>
+
+      <!-- Subtext -->
+      <p class="text-xl md:text-[21px] text-text-secondary leading-relaxed max-w-[620px] mb-10 hero-reveal hero-d2">
+        {hero.subtext}
+      </p>
+
+      <!-- Caption -->
+      <p class="font-mono text-[11px] text-text-tertiary tracking-mono-label hero-reveal hero-d3">
+        {hero.caption}
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: hero-up 0.7s ease-out forwards;
+  }
+  .hero-d1 { animation-delay: 0.15s; }
+  .hero-d2 { animation-delay: 0.3s; }
+  .hero-d3 { animation-delay: 0.45s; }
+
+  @keyframes hero-up {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-reveal {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

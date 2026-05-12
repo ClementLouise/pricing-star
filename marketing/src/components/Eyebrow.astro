@@ -1,0 +1,16 @@
+---
+interface Props {
+  text: string;
+  centered?: boolean;
+  class?: string;
+}
+const { text, centered = false, class: className = "" } = Astro.props;
+---
+
+<p class:list={[
+  "font-mono text-[11px] uppercase tracking-mono-label text-text-tertiary mb-8",
+  centered && "text-center",
+  className,
+]}>
+  {text}
+</p>

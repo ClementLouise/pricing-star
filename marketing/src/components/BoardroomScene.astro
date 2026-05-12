@@ -1,0 +1,33 @@
+---
+import Eyebrow from './Eyebrow.astro';
+import { copy } from '../content/copy';
+
+const { boardroom } = copy;
+const titleLines = boardroom.title.split('\n');
+---
+
+<section class="bg-panel py-section-sm md:py-section">
+  <div class="max-w-container mx-auto px-8">
+    <div class="max-w-copy reveal">
+      <Eyebrow text={boardroom.eyebrow} />
+
+      <h2 class="font-serif font-light italic text-display-sm md:text-display-md text-text-primary mb-12 leading-tight">
+        {titleLines.map((line, i) => (
+          <span>{line}{i < titleLines.length - 1 ? <br /> : null}</span>
+        ))}
+      </h2>
+
+      <div class="space-y-6">
+        {boardroom.body.map((paragraph, i) => (
+          <p class:list={[
+            "font-serif text-[19px] md:text-[21px] text-text-secondary leading-relaxed reveal",
+            i === boardroom.body.length - 1 && "text-text-primary font-medium",
+            `reveal-delay-${Math.min(i + 1, 4)}`,
+          ]}>
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import BoardroomScene from '../components/BoardroomScene.astro';
+import Capabilities from '../components/Capabilities.astro';
+import EngineSection from '../components/EngineSection.astro';
+import PersonaSection from '../components/PersonaSection.astro';
+import ContactSection from '../components/ContactSection.astro';
+import Footer from '../components/Footer.astro';
+import { copy } from '../content/copy';
+---
+
+<Base
+  title={copy.site.title}
+  description={copy.site.description}
+  ogImage={copy.site.ogImage}
+>
+  <Header />
+  <main>
+    <Hero />
+    <BoardroomScene />
+    <Capabilities />
+    <EngineSection />
+    <PersonaSection />
+    <ContactSection />
+  </main>
+  <Footer />
+</Base>
