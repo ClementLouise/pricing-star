@@ -10,7 +10,8 @@ import Loading from "@/pages/Loading";
 import MyDataPage from "@/pages/MyDataPage";
 
 export default function App() {
-  const { isLoading } = useAuth0();
+  const { isLoading, isAuthenticated } = useAuth0();
+  console.log('[App] render — isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
 
   if (isLoading) return <Loading />;
 

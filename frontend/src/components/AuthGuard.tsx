@@ -8,6 +8,7 @@ export default function AuthGuard() {
   const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
   const location = useLocation();
   const { data: userMe, isLoading: userLoading } = useUserMe();
+  console.log('[AuthGuard] render — isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'userLoading:', userLoading, 'path:', location.pathname);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
