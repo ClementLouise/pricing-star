@@ -143,11 +143,11 @@ export default function LandingPage() {
       >
         <div className="max-w-[1200px] mx-auto px-8 h-14 flex items-center justify-between">
           <span className="flex items-center gap-2 font-mono text-[13px] uppercase tracking-[0.1em] text-text-primary font-medium">
-            <svg width="20" height="20" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="shrink-0">
-              <rect width="32" height="32" fill="#EFE9DD"/>
+            PRICING
+            <svg width="14" height="14" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="shrink-0">
               <path d="M16,4 L18.94,11.95 L27.41,12.29 L20.76,17.55 L23.05,25.71 L16,21 L8.95,25.71 L11.24,17.55 L4.59,12.29 L13.06,11.95 Z" fill="#B8860B"/>
             </svg>
-            PRICING <span className="text-gold-500">★</span> STAR
+            STAR
           </span>
           <button
             onClick={() => loginWithRedirect()}
