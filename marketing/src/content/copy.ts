@@ -5,7 +5,7 @@ export const copy = {
       "The modeling layer for global launch sequencing — built for Heads of Pricing & Market Access who refuse to let regulatory cascades dictate their NPV.",
     url: "https://pricingstar.io",
     email: "contact@pricingstar.com",
-    ogImage: "/og-image.png",
+    ogImage: "/og-image.svg",
   },
 
   hero: {

@@ -47,7 +47,7 @@ src/
 
 1. Relire `src/content/copy.ts` — valider les chiffres (47 markets, 200+ IRP rules)
 2. Créer l'email `contact@pricingstar.com`
-3. Générer `public/og-image.png` (1200×630)
+3. Remplacer `public/og-image.svg` par `public/og-image.png` (PNG 1200×630, requis pour Twitter/LinkedIn)
 4. Configurer le DNS `pricingstar.com` → Railway
 
 ## Railway deploy
