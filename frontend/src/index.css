@@ -5,6 +5,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    background-color: #EFE9DD;
+    background-image:
+      linear-gradient(rgba(86, 80, 69, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(86, 80, 69, 0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+    color: #161310;
+  }
+}
+
 /* Respect prefers-reduced-motion globally */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

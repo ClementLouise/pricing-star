@@ -30,17 +30,21 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }: M
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 animate-fade-in" onClick={onClose} aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-text-primary/40 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
         className={[
-          "relative w-full bg-panel border border-border rounded-lg shadow-lg animate-scale-in",
+          "relative w-full bg-panel border border-border-soft rounded-md shadow-lg animate-scale-in",
           sizeClasses[size],
         ].join(" ")}
       >
-        <div className="flex items-center justify-between p-3 border-b border-border">
+        <div className="flex items-center justify-between p-3 border-b border-border-soft">
           <h2 id="modal-title" className="text-sm font-semibold text-text-primary">
             {title}
           </h2>
@@ -53,7 +57,7 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }: M
           </button>
         </div>
         <div className="p-3">{children}</div>
-        {footer && <div className="flex justify-end gap-2 p-3 border-t border-border">{footer}</div>}
+        {footer && <div className="flex justify-end gap-2 p-3 border-t border-border-soft">{footer}</div>}
       </div>
     </div>,
     document.body,

@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { ChevronDown, LogOut } from "lucide-react";
+
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -47,13 +47,12 @@ function UserMenu() {
       <div className="relative" ref={ref}>
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary transition-colors"
+          className="text-xs text-text-secondary hover:text-text-primary transition-colors font-mono"
         >
           {label}
-          <ChevronDown size={12} className="text-text-tertiary" />
         </button>
         {open && (
-          <div className="absolute right-0 top-full mt-1 w-52 bg-panel border border-border rounded-md shadow-md z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-1 w-52 bg-panel border border-border rounded-md shadow-DEFAULT z-50 overflow-hidden">
             <button
               onClick={() => { navigate("/home"); setOpen(false); }}
               className="w-full text-left px-4 py-2.5 text-xs text-text-secondary hover:text-text-primary hover:bg-panel-elev transition-colors"
@@ -79,38 +78,45 @@ function UserMenu() {
       <button
         onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
         title="Se déconnecter"
-        className="text-text-tertiary hover:text-text-primary transition-colors"
+        className="font-mono text-[10px] uppercase tracking-wider text-text-tertiary hover:text-text-primary border border-border bg-panel px-2.5 py-1 rounded transition-colors hover:bg-text-primary hover:border-text-primary hover:text-bg"
       >
-        <LogOut size={14} />
+        Sign out
       </button>
     </div>
   );
 }
 
-function TenantChip() {
+function TenantStats() {
   const { user } = useAuth0();
   const tenantId = (user?.[`${CLAIMS_NS}/tenant_id`] as string | undefined) ?? "";
   const tier = (user?.[`${CLAIMS_NS}/tenant_tier`] as string | undefined) ?? "";
   if (!tenantId) return null;
-  const initials = tenantId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase();
-  const variant = tier === "trial" ? "warning" : tier === "production" ? "success" : "neutral";
+  const initials = tenantId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase();
+  const isTrial = tier === "trial";
+
   return (
-    <div className="flex items-center gap-1.5 border-l border-border pl-3">
-      <span className="font-mono text-xs font-medium text-text-secondary">{initials}</span>
-      {tier && <Pill variant={variant}>{tier}</Pill>}
+    <div className="flex items-center gap-3 border-l border-border pl-3">
+      <span className="font-mono text-[11px] font-medium text-text-secondary uppercase tracking-wider">
+        {initials}
+      </span>
+      {isTrial && (
+        <Pill variant="trial">TRIAL</Pill>
+      )}
     </div>
   );
 }
 
 function Header() {
   return (
-    <header className="flex items-center justify-between px-4 h-12 bg-panel border-b border-border shrink-0">
-      <div className="flex items-center gap-3">
-        <Link to="/home" className="flex items-center gap-0.5 text-sm font-semibold text-text-primary tracking-tight">
-          PRICING<span className="text-gold-500">STAR</span>
-          <span className="text-gold-500 text-[8px] leading-none ml-0.5">●</span>
+    <header className="flex items-center justify-between px-8 border-b-2 border-text-primary shrink-0" style={{ height: 56 }}>
+      <div className="flex items-center gap-4">
+        <Link
+          to="/home"
+          className="font-mono text-[13px] uppercase tracking-[0.1em] text-text-primary font-medium"
+        >
+          PRICING <span className="text-gold-500">★</span> STAR
         </Link>
-        <TenantChip />
+        <TenantStats />
       </div>
       <UserMenu />
     </header>
@@ -170,14 +176,14 @@ function TabNav() {
   const activeScenario = useAppStore((s) => s.activeScenario);
 
   return (
-    <nav className="flex border-b border-border bg-panel shrink-0 px-4" aria-label="Tabs">
+    <nav className="flex border-b border-border-soft bg-panel shrink-0 px-4" aria-label="Tabs">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
           disabled={!activeScenario && tab.id !== "asset"}
           className={[
-            "px-3 py-2 text-xs border-b-2 transition-colors duration-fast",
+            "px-3 py-2.5 text-xs border-b-2 transition-colors duration-fast",
             activeTab === tab.id
               ? "border-gold-500 text-text-primary font-medium"
               : "border-transparent text-text-secondary hover:text-text-primary",
@@ -188,8 +194,8 @@ function TabNav() {
         </button>
       ))}
       {activeScenario && (
-        <span className="ml-auto self-center text-xs text-text-tertiary">
-          Scenario: <span className="text-text-secondary">{activeScenario.name}</span>
+        <span className="ml-auto self-center font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
+          {activeScenario.name}
         </span>
       )}
     </nav>

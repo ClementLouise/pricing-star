@@ -24,7 +24,11 @@ export function Drawer({ open, onClose, title, children, footer, width = "w-96" 
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-text-primary/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <aside
         role="dialog"
         aria-modal="true"
@@ -34,7 +38,7 @@ export function Drawer({ open, onClose, title, children, footer, width = "w-96" 
           width,
         ].join(" ")}
       >
-        <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between p-3 border-b border-border-soft shrink-0">
           <h2 id="drawer-title" className="text-sm font-semibold text-text-primary">
             {title}
           </h2>
@@ -47,7 +51,7 @@ export function Drawer({ open, onClose, title, children, footer, width = "w-96" 
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-3">{children}</div>
-        {footer && <div className="flex justify-end gap-2 p-3 border-t border-border shrink-0">{footer}</div>}
+        {footer && <div className="flex justify-end gap-2 p-3 border-t border-border-soft shrink-0">{footer}</div>}
       </aside>
     </div>,
     document.body,

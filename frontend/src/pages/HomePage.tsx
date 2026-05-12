@@ -1,16 +1,21 @@
+import { useAuth0 } from "@auth0/auth0-react";
 import {
-  Activity, Archive, BarChart3, ChevronDown, ChevronRight,
+  Activity, Archive, BarChart3, ChevronDown,
   Download, Edit3, GitBranch, Globe, Layers, Plus,
   Shield, Sparkles, Upload,
 } from "lucide-react";
 import { type ComponentType, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const CLAIMS_NS = "https://pricingstar.io";
+
 import { ImportWizard } from "@/components/ImportWizard";
 import { AppShell } from "@/components/layout/AppShell";
+import { ActionCard } from "@/components/ui/ActionCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Panel } from "@/components/ui/Panel";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Skeleton, SkeletonBlock } from "@/components/ui/Skeleton";
 import { useAssetList } from "@/hooks/useAssets";
 import { useRecentActivity } from "@/hooks/useDashboard";
@@ -69,70 +74,68 @@ const MODULES: Module[] = [
   { icon: Activity,   name: "DE Trap",            description: "Quantifier l'opt-in DE",           detail: "Quantifie l'impact de l'opt-in allemand sur les 27 marchés qui référencent l'Allemagne. Simulateur interactif du piège confidentiel DE." },
 ];
 
-// ─── Small shared components ──────────────────────────────────────────────────
+// ─── HeroBar ──────────────────────────────────────────────────────────────────
 
-function SummaryCell({ label, value, valueClass = "", subtle = false }: {
-  label: string; value: string | number; valueClass?: string; subtle?: boolean;
+function HeroBar({ firstName, tenantName, assetCount }: {
+  firstName: string; tenantName: string; assetCount: number;
 }) {
   return (
-    <div className={`bg-bg p-4 ${subtle ? "opacity-70" : ""}`}>
-      <p className="font-mono text-xs uppercase tracking-wider text-text-secondary mb-2">{label}</p>
-      <p className={`font-mono font-medium text-text-primary tabular-nums ${valueClass || "text-2xl"}`}>
-        {value}
-      </p>
+    <div className="bg-panel border-b border-border px-8 py-12">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8 items-center">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-editorial text-text-tertiary mb-3">
+            ■ Tableau de bord
+          </p>
+          <h1 className="text-5xl font-light tracking-tight text-text-primary">
+            Bonjour <strong className="font-semibold">{firstName}</strong>
+          </h1>
+          <p className="mt-3 text-base text-text-secondary">
+            Modélisez et défendez vos prix face aux régulations CMS Generous, Guard et Globe.
+          </p>
+        </div>
+        <div className="flex flex-col items-start md:items-end gap-1">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-text-tertiary">Tenant</p>
+          <p className="font-mono text-lg font-medium text-text-primary">{tenantName || "—"}</p>
+          <p className="font-mono text-xs text-text-secondary">
+            {assetCount} {assetCount === 1 ? "asset" : "assets"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
-function ActionCard({ icon: Icon, title, description, onClick, accent = false }: {
-  icon: LucideIcon; title: string; description: string; onClick: () => void; accent?: boolean;
-}) {
+function DidacticHeroBar({ firstName }: { firstName: string }) {
   return (
-    <button
-      onClick={onClick}
-      className={`text-left p-4 rounded-lg border transition-colors ${
-        accent
-          ? "border-gold-500/40 bg-gold-500/5 hover:bg-gold-500/10"
-          : "border-border bg-panel hover:bg-panel-elev"
-      }`}
-    >
-      <Icon className={`w-5 h-5 mb-3 ${accent ? "text-gold-500" : "text-text-secondary"}`} />
-      <p className="font-sans text-sm font-semibold text-text-primary mb-1">{title}</p>
-      <p className="text-xs text-text-secondary">{description}</p>
-    </button>
-  );
-}
-
-// ─── Mode-specific sections ───────────────────────────────────────────────────
-
-function DidacticHero() {
-  return (
-    <div className="text-center mb-12">
-      <p className="font-mono text-xs text-gold-500 tracking-widest uppercase mb-3">Bienvenue</p>
-      <h1 className="font-sans text-4xl md:text-5xl font-semibold text-text-primary mb-4 tracking-tight">
-        Naviguer MFN. Défendre la NPV.
-      </h1>
-      <p className="text-base text-text-secondary max-w-2xl mx-auto">
-        Le premier outil dédié aux équipes pricing mid-cap pharma pour modéliser et défendre vos prix
-        face aux régulations CMS Generous, Guard et Globe.
-      </p>
+    <div className="bg-panel border-b border-border px-8 py-12">
+      <div className="max-w-6xl mx-auto">
+        <p className="font-mono text-[11px] uppercase tracking-editorial text-gold-500 mb-3">
+          ■ Bienvenue
+        </p>
+        <h1 className="text-5xl font-light tracking-tight text-text-primary mb-3">
+          Bonjour <strong className="font-semibold">{firstName}</strong>
+        </h1>
+        <p className="text-2xl font-light text-text-primary mb-4 tracking-tight">
+          Naviguer MFN. Défendre la NPV.
+        </p>
+        <p className="text-base text-text-secondary max-w-2xl">
+          Le premier outil dédié aux équipes pricing mid-cap pharma pour modéliser et défendre vos prix
+          face aux régulations CMS Generous, Guard et Globe.
+        </p>
+      </div>
     </div>
   );
 }
 
-function DashboardHero({ firstName, assetCount, lastActivityDate }: {
-  firstName: string; assetCount: number; lastActivityDate: string | null;
+// ─── PortfolioSummary ─────────────────────────────────────────────────────────
+
+function StatCell({ label, value, muted = false }: {
+  label: string; value: string | number; muted?: boolean;
 }) {
   return (
-    <div className="mb-10">
-      <p className="font-mono text-xs text-gold-500 tracking-widest uppercase mb-2">Tableau de bord</p>
-      <h1 className="font-sans text-3xl md:text-4xl font-semibold text-text-primary tracking-tight">
-        Bonjour {firstName}
-      </h1>
-      <p className="text-base text-text-secondary mt-2">
-        {assetCount} {assetCount === 1 ? "asset" : "assets"} dans votre portfolio.
-        {lastActivityDate && ` Dernière activité ${formatRelativeTime(lastActivityDate)}.`}
-      </p>
+    <div className={`bg-panel p-4 ${muted ? "opacity-60" : ""}`}>
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary mb-2">{label}</p>
+      <p className="font-mono font-medium text-text-primary tabular-nums text-2xl">{value}</p>
     </div>
   );
 }
@@ -146,18 +149,19 @@ function PortfolioSummary({ assets }: { assets: Asset[] }) {
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]?.updated_at ?? null;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border rounded-lg overflow-hidden mb-10">
-      <SummaryCell label="Assets actifs" value={active} />
-      <SummaryCell label="Sample" value={sample} subtle />
-      <SummaryCell label="Archivés" value={archived} subtle />
-      <SummaryCell
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border-soft rounded-md overflow-hidden mb-8">
+      <StatCell label="Assets actifs" value={active} />
+      <StatCell label="Sample" value={sample} muted />
+      <StatCell label="Archivés" value={archived} muted />
+      <StatCell
         label="Dernière modif"
         value={lastUpdated ? formatRelativeTime(lastUpdated) : "—"}
-        valueClass="text-base"
       />
     </div>
   );
 }
+
+// ─── QuickActions ─────────────────────────────────────────────────────────────
 
 function QuickActions({ assets, onImport }: { assets: Asset[]; onImport: () => void }) {
   const navigate = useNavigate();
@@ -168,25 +172,44 @@ function QuickActions({ assets, onImport }: { assets: Asset[]; onImport: () => v
 
   return (
     <div className="mb-10">
-      <h3 className="font-sans text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4">
-        Actions rapides
-      </h3>
+      <SectionHeader title="› Actions rapides" meta="⌘ + K pour la recherche rapide" />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <ActionCard icon={Plus} title="Nouvel asset" description="Créer un médicament from scratch" onClick={() => navigate("/assets")} />
-        <ActionCard icon={Upload} title="Importer Excel" description="Asset complet depuis un .xlsx" onClick={onImport} />
         <ActionCard
-          icon={Download}
+          icon={<Plus className="w-5 h-5" />}
+          title="Nouvel asset"
+          desc="Créer un médicament from scratch"
+          shortcut="N"
+          variant="primary"
+          onClick={() => navigate("/assets")}
+        />
+        <ActionCard
+          icon={<Upload className="w-5 h-5" />}
+          title="Importer Excel"
+          desc="Asset complet depuis un .xlsx"
+          shortcut="I"
+          onClick={onImport}
+        />
+        <ActionCard
+          icon={<Download className="w-5 h-5" />}
           title={downloading ? "Téléchargement…" : "Modèle Excel"}
-          description="Template .xlsx pré-rempli"
+          desc="Template .xlsx pré-rempli"
+          shortcut="T"
           onClick={() => downloadTemplate()}
         />
-        {lastAsset && (
+        {lastAsset ? (
           <ActionCard
-            icon={ChevronRight}
-            title={`Reprendre ${lastAsset.name}`}
-            description="Dernier asset modifié"
+            icon={<Archive className="w-5 h-5" />}
+            title={`Reprendre`}
+            desc={lastAsset.name}
+            shortcut="⏎"
             onClick={() => navigate(`/assets/${lastAsset.id}`)}
-            accent
+          />
+        ) : (
+          <ActionCard
+            icon={<BarChart3 className="w-5 h-5" />}
+            title="Explorer les modules"
+            desc="Les 9 modules de Pricing Star"
+            onClick={() => navigate("/assets")}
           />
         )}
       </div>
@@ -194,45 +217,52 @@ function QuickActions({ assets, onImport }: { assets: Asset[]; onImport: () => v
   );
 }
 
-function ActivityFeed({ items }: { items: ReturnType<typeof useRecentActivity>["data"] }) {
+// ─── ActivityFeed ─────────────────────────────────────────────────────────────
+
+function ActivityFeed({ items, totalCount }: {
+  items: ReturnType<typeof useRecentActivity>["data"];
+  totalCount: number;
+}) {
   const navigate = useNavigate();
   if (!items?.length) return null;
   const visible = items.slice(0, 8).map(item => ({ item, fmt: formatActivity(item) })).filter(x => x.fmt !== null);
 
   return (
     <div className="mb-10">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-sans text-sm font-semibold text-text-secondary uppercase tracking-wider">
-          Activité récente
-        </h3>
-        <span className="font-mono text-xs text-text-tertiary">
-          {items.length} {items.length === 1 ? "événement" : "événements"}
-        </span>
-      </div>
-      <Panel padding="none">
-        {visible.map(({ item, fmt }, idx) => (
+      <SectionHeader
+        title="› Activité récente"
+        meta={`${totalCount} ${totalCount === 1 ? "événement" : "événements"} · 7 derniers jours`}
+      />
+      <div className="rounded-md border border-border-soft overflow-hidden">
+        {/* Table header */}
+        <div className="grid grid-cols-[auto_1fr_auto] gap-3 px-4 py-2 bg-bg border-b border-border-soft">
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">Date</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">Événement</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">Type</span>
+        </div>
+        {visible.map(({ item, fmt }) => (
           <div
             key={item.id}
-            className={`flex items-start gap-3 p-3 ${idx > 0 ? "border-t border-border" : ""}`}
+            className="grid grid-cols-[auto_1fr_auto] gap-3 items-center px-4 py-3 bg-panel border-b border-border-soft last:border-0 hover:bg-panel-elev transition-colors"
           >
-            <div className="w-8 h-8 rounded bg-panel-elev grid place-items-center shrink-0">
+            <div className="w-7 h-7 rounded bg-bg grid place-items-center shrink-0">
               <ActivityIcon name={fmt!.icon} />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0">
               <p className="text-sm text-text-primary truncate">{fmt!.label}</p>
               {fmt!.detail && (
                 <p className="font-mono text-xs text-text-secondary mt-0.5">{fmt!.detail}</p>
               )}
             </div>
-            <p className="font-mono text-xs text-text-tertiary shrink-0 mt-0.5">
+            <p className="font-mono text-xs text-text-tertiary shrink-0">
               {formatRelativeTime(item.created_at)}
             </p>
           </div>
         ))}
-      </Panel>
+      </div>
       <button
         onClick={() => navigate("/settings/my-data")}
-        className="mt-2 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
+        className="mt-2 font-mono text-[10px] uppercase tracking-wider text-text-tertiary hover:text-text-secondary transition-colors"
       >
         Voir tout l'historique →
       </button>
@@ -240,13 +270,15 @@ function ActivityFeed({ items }: { items: ReturnType<typeof useRecentActivity>["
   );
 }
 
+// ─── Didactic sections ────────────────────────────────────────────────────────
+
 function DidacticOnboarding({ onImport }: { onImport: () => void }) {
   const navigate = useNavigate();
   const { downloadTemplate, downloading } = useDownloadTemplate();
   return (
     <Panel padding="none" className="border-l-4 border-gold-500 mb-10 px-6 py-6">
-      <p className="font-mono text-xs text-gold-500 tracking-wider uppercase mb-2">Pour commencer</p>
-      <h2 className="font-sans text-2xl font-semibold text-text-primary mb-2">
+      <p className="font-mono text-[10px] uppercase tracking-editorial text-gold-500 mb-2">Pour commencer</p>
+      <h2 className="text-2xl font-semibold text-text-primary mb-2">
         Créez votre premier asset
       </h2>
       <p className="text-text-secondary mb-4">
@@ -274,14 +306,13 @@ function DidacticOnboarding({ onImport }: { onImport: () => void }) {
 function ProblemsSection() {
   return (
     <div className="mb-10">
-      <h2 className="font-sans text-xl font-semibold text-text-primary mb-2">Pourquoi cet outil existe</h2>
-      <p className="text-text-secondary mb-6">Trois douleurs concrètes qu'Excel ne résout plus en 2026.</p>
+      <SectionHeader title="› Pourquoi cet outil existe" />
       <div className="grid md:grid-cols-3 gap-4">
         {PROBLEMS.map(p => (
           <Panel key={p.title} padding="none" className="border-l-4 border-gold-500 px-4 py-4">
-            <h3 className="font-sans text-sm font-semibold text-text-primary mb-2">{p.title}</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-2">{p.title}</h3>
             <p className="text-xs text-text-secondary leading-relaxed mb-3">{p.body}</p>
-            <p className="font-mono text-[10px] text-gold-500 uppercase tracking-wider mb-1">Notre réponse</p>
+            <p className="font-mono text-[10px] text-gold-500 uppercase tracking-editorial mb-1">Notre réponse</p>
             <p className="text-xs text-text-secondary leading-relaxed">{p.response}</p>
           </Panel>
         ))}
@@ -293,17 +324,15 @@ function ProblemsSection() {
 function HowItWorksFlow() {
   return (
     <div className="mb-10">
-      <h2 className="font-sans text-xl font-semibold text-text-primary mb-2">
-        Comment ça marche, en 30 secondes
-      </h2>
-      <div className="grid md:grid-cols-3 gap-4 mt-4">
+      <SectionHeader title="› Comment ça marche" meta="30 secondes" />
+      <div className="grid md:grid-cols-3 gap-4">
         {[
           { step: "ASSET",      desc: "Le médicament (prix, indication, marchés, G2N)", sub: "1 par asset" },
           { step: "SCÉNARIO",   desc: "Une configuration régulatoire + stratégique testée sur cet asset", sub: "N par asset" },
           { step: "SIMULATION", desc: "Le résultat calculé (NPV, Method I/II, cascade, audit JSON)", sub: "N par scénario" },
         ].map(item => (
           <Panel key={item.step} elevated>
-            <p className="text-xs text-gold-500 tracking-widest font-semibold mb-2">{item.step}</p>
+            <p className="font-mono text-[10px] text-gold-500 tracking-editorial uppercase font-semibold mb-2">{item.step}</p>
             <p className="text-sm text-text-primary leading-relaxed mb-2">{item.desc}</p>
             <p className="text-xs text-text-tertiary">{item.sub}</p>
           </Panel>
@@ -328,9 +357,9 @@ function ModulesGuide({ variant, hasAssets }: { variant: "full" | "compact"; has
         onClick={() => setExpanded(v => !v)}
         className="flex items-center gap-2 w-full text-left mb-4"
       >
-        <h3 className="font-sans text-sm font-semibold text-text-secondary uppercase tracking-wider flex-1">
-          Les 9 modules de Pricing Star
-        </h3>
+        <span className="font-mono text-[11px] uppercase tracking-editorial text-text-secondary flex-1">
+          › Les 9 modules de Pricing Star
+        </span>
         <ChevronDown
           className={`w-4 h-4 text-text-tertiary transition-transform ${expanded ? "rotate-180" : ""}`}
         />
@@ -341,7 +370,7 @@ function ModulesGuide({ variant, hasAssets }: { variant: "full" | "compact"; has
             <button
               key={mod.name}
               onClick={() => setActiveModule(mod)}
-              className="text-left p-3 rounded-lg border border-border bg-panel hover:bg-panel-elev transition-colors"
+              className="text-left p-3 rounded-md border border-border-soft bg-panel hover:border-gold-500 hover:bg-panel-elev transition-colors"
             >
               <mod.icon className="w-4 h-4 text-text-tertiary mb-2" />
               <p className="text-sm font-medium text-text-primary mb-1">{mod.name}</p>
@@ -377,13 +406,15 @@ function ModulesGuide({ variant, hasAssets }: { variant: "full" | "compact"; has
 function HomePageSkeleton() {
   return (
     <AppShell variant="minimal">
-      <div className="max-w-6xl mx-auto px-6 py-10">
-        <div className="mb-12 flex flex-col items-center gap-3">
+      <div className="bg-panel border-b border-border px-8 py-12">
+        <div className="max-w-6xl mx-auto flex flex-col gap-3">
           <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-10 w-80" />
+          <Skeleton className="h-12 w-80" />
           <Skeleton className="h-4 w-96" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border rounded-lg overflow-hidden mb-10">
+      </div>
+      <div className="max-w-6xl mx-auto px-8 pt-10 pb-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border-soft rounded-md overflow-hidden mb-8">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20" />)}
         </div>
         <SkeletonBlock lines={4} />
@@ -395,6 +426,7 @@ function HomePageSkeleton() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
+  const { user: auth0User } = useAuth0();
   const { data: assetsPage, isLoading: assetsLoading, isError: assetsError } = useAssetList();
   const { data: activity, isLoading: activityLoading } = useRecentActivity(20);
   const { data: me } = useUserMe();
@@ -402,7 +434,6 @@ export default function HomePage() {
   const [importOpen, setImportOpen] = useState(false);
   const didDismiss = useRef(false);
 
-  // Dismiss first-visit flag once, non-blocking
   useEffect(() => {
     if (me?.has_seen_welcome === false && !didDismiss.current) {
       didDismiss.current = true;
@@ -416,23 +447,28 @@ export default function HomePage() {
   const assets = assetsPage?.items ?? [];
   const dashboardMode = !assetsError && (assets.length > 0 || (activity?.length ?? 0) > 0);
   const firstName = me?.name?.split(" ")[0] ?? "à vous";
-  const lastActivityDate = activity?.[0]?.created_at ?? null;
+  const activeAssets = assets.filter(a => !a.archived_at && !a.is_sample);
+  const tenantId = (auth0User?.[`${CLAIMS_NS}/tenant_id`] as string | undefined) ?? "";
+  const tenantName = tenantId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase();
 
   return (
     <AppShell variant="minimal">
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      {dashboardMode ? (
+        <HeroBar firstName={firstName} tenantName={tenantName} assetCount={activeAssets.length} />
+      ) : (
+        <DidacticHeroBar firstName={firstName} />
+      )}
 
-        {dashboardMode ? (
-          <DashboardHero firstName={firstName} assetCount={assets.filter(a => !a.archived_at && !a.is_sample).length} lastActivityDate={lastActivityDate} />
-        ) : (
-          <DidacticHero />
-        )}
-
+      <div className="max-w-6xl mx-auto px-8 pt-10 pb-16">
         {dashboardMode ? (
           <>
+            <SectionHeader
+              title="› Vue d'ensemble"
+              meta={`Synchronisé · ${activeAssets.length} ${activeAssets.length === 1 ? "asset actif" : "assets actifs"}`}
+            />
             <PortfolioSummary assets={assets} />
             <QuickActions assets={assets} onImport={() => setImportOpen(true)} />
-            <ActivityFeed items={activity} />
+            <ActivityFeed items={activity} totalCount={activity?.length ?? 0} />
             <ModulesGuide variant="compact" hasAssets={assets.length > 0} />
           </>
         ) : (
@@ -443,7 +479,6 @@ export default function HomePage() {
             <ModulesGuide variant="full" hasAssets={false} />
           </>
         )}
-
       </div>
 
       <ImportWizard

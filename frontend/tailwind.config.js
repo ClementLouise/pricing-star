@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand — per PRD §06
+        // Brand — legacy dark accents kept for backward compat
         navy: {
           900: '#0F1B2D',
           700: '#1F3251',
@@ -13,29 +13,32 @@ export default {
           100: '#D9E1ED',
         },
         gold: {
-          900: '#8B5E0B',
-          500: '#B8860B',
+          900: '#7E5C07',      // deep gold for text on light bg
+          500: '#B8860B',      // primary accent
           300: '#D4A574',
           100: '#FFF8E1',
         },
-        // Semantic surface
-        bg: '#0D1117',
-        panel: '#161B22',
-        'panel-elev': '#1C2127',
-        border: '#21262D',
-        // Text
-        'text-primary': '#E6EDF3',
-        'text-secondary': '#8B949E',
-        'text-tertiary': '#6E7681',
-        // Functional
+        // === SEMANTIC SURFACES (LIGHT WARM BEIGE) ===
+        bg: '#EFE9DD',           // warm beige canvas
+        panel: '#F8F3E6',        // cards, lighter cream
+        'panel-elev': '#FDF9ED', // hover state
+        border: '#D5CCB6',       // strong border
+        'border-soft': '#E3DAC4',// subtle divider
+        // === TEXT (LIGHT) ===
+        'text-primary': '#161310',     // near black
+        'text-secondary': '#565045',   // warm gray
+        'text-tertiary': '#8C8473',    // muted
+        // === FUNCTIONAL (adapted for light bg) ===
         success: '#2E7D32',
         'success-light': '#E8F5E9',
-        danger: '#C00000',
-        'danger-light': '#FFEBEE',
-        warning: '#F59E0B',
-        'warning-light': '#FFF8E1',
-        info: '#1976D2',
-        'info-light': '#E3F2FD',
+        danger: '#B91C1C',
+        'danger-light': '#FEF2F2',
+        warning: '#B45309',
+        'warning-light': '#FEF3C7',
+        info: '#1E40AF',
+        'info-light': '#EFF6FF',
+        // === GRID / TEXTURE ===
+        'grid-line': 'rgba(86, 80, 69, 0.06)',
       },
       fontFamily: {
         sans: ['"IBM Plex Sans"', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
@@ -63,6 +66,7 @@ export default {
         wide: '0.04em',
         wider: '0.08em',
         widest: '0.12em',
+        editorial: '0.18em',
       },
       borderRadius: {
         none: '0',
@@ -73,10 +77,10 @@ export default {
         full: '9999px',
       },
       boxShadow: {
-        sm: '0 1px 2px rgba(0,0,0,0.5)',
-        DEFAULT: '0 4px 6px rgba(0,0,0,0.5)',
-        lg: '0 10px 15px rgba(0,0,0,0.5)',
-        inset: 'inset 0 1px 2px rgba(0,0,0,0.5)',
+        sm: '0 1px 3px rgba(22, 19, 16, 0.08)',
+        DEFAULT: '0 4px 8px rgba(22, 19, 16, 0.10)',
+        lg: '0 10px 20px rgba(22, 19, 16, 0.12)',
+        inset: 'inset 0 1px 2px rgba(22, 19, 16, 0.08)',
       },
       spacing: {
         // 8px grid
@@ -92,6 +96,15 @@ export default {
         '8': '64px',
         '10': '80px',
         '12': '96px',
+      },
+      backgroundImage: {
+        'grid': [
+          'linear-gradient(rgba(86, 80, 69, 0.06) 1px, transparent 1px)',
+          'linear-gradient(90deg, rgba(86, 80, 69, 0.06) 1px, transparent 1px)',
+        ].join(', '),
+      },
+      backgroundSize: {
+        'grid': '48px 48px',
       },
       transitionDuration: {
         fast: '120ms',

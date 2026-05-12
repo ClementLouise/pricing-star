@@ -6,7 +6,7 @@ interface SkeletonProps {
 export function Skeleton({ className = "" }: SkeletonProps) {
   return (
     <div
-      className={["animate-pulse bg-panel-elev rounded", className].join(" ")}
+      className={["animate-pulse bg-border-soft rounded", className].join(" ")}
       aria-hidden="true"
     />
   );

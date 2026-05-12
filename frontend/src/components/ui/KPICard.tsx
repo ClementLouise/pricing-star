@@ -12,6 +12,7 @@ interface KPICardProps {
   status?: "positive" | "negative" | "neutral";
   sublabel?: string;
   loading?: boolean;
+  size?: "sm" | "md";
 }
 
 function render(value: number | null | undefined, format: KPIFormat, precision?: number): string {
@@ -37,16 +38,22 @@ export function KPICard({
   status = "neutral",
   sublabel,
   loading = false,
+  size = "md",
 }: KPICardProps) {
   const deltaSign = delta != null && delta > 0 ? "▲" : "▼";
+  const valueClass = size === "sm"
+    ? "font-mono font-medium text-display-num-sm text-text-primary tabular-nums"
+    : "font-mono font-medium text-display-num-md text-text-primary tabular-nums";
 
   return (
-    <div className="flex flex-col gap-1 px-4 py-3 rounded-md bg-panel border border-border">
-      <p className="font-mono text-xs uppercase tracking-wider text-text-secondary">{label}</p>
+    <div className="relative flex flex-col gap-1 px-4 py-3 bg-panel border border-border-soft rounded-md overflow-hidden">
+      {/* Gold accent bar — 2px top, 24px wide */}
+      <div className="absolute top-0 left-4 w-6 h-0.5 bg-gold-500" />
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary mt-1">{label}</p>
       {loading ? (
-        <div className="h-8 w-24 animate-pulse bg-panel-elev rounded" />
+        <div className="h-8 w-24 animate-pulse bg-border-soft rounded" />
       ) : (
-        <p className="font-mono font-medium text-display-num-sm text-text-primary tabular-nums">{render(value, format, precision)}</p>
+        <p className={valueClass}>{render(value, format, precision)}</p>
       )}
       {delta != null && !loading && (
         <p className={["font-mono text-xs tabular-nums", statusColors[status]].join(" ")}>

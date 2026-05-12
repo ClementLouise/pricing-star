@@ -288,19 +288,19 @@ export function OptimizerTab({ scenario }: OptimizerTabProps) {
                 ]}
                 margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
               >
-                <CartesianGrid vertical={false} stroke="#1e2a3a" />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+                <CartesianGrid vertical={false} stroke="#D5CCB6" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#565045" }} axisLine={false} tickLine={false} />
                 <YAxis hide domain={["auto", "auto"]} />
                 <Tooltip
                   formatter={(v: unknown) => formatCurrency(Number(v), { compact: true })}
-                  contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", fontSize: 12 }}
+                  contentStyle={{ background: "#F8F3E6", border: "1px solid #D5CCB6", fontSize: 12, color: "#161310" }}
                 />
-                <Bar dataKey="value" fill="#2563eb" radius={[3, 3, 0, 0]}>
+                <Bar dataKey="value" fill="#1E40AF" radius={[3, 3, 0, 0]}>
                   <LabelList
                     dataKey="value"
                     position="top"
                     formatter={(v: unknown) => formatCurrency(Number(v), { compact: true })}
-                    style={{ fontSize: 10, fill: "#94a3b8" }}
+                    style={{ fontSize: 10, fill: "#565045" }}
                   />
                 </Bar>
               </BarChart>

@@ -67,8 +67,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={t.id}
               role="alert"
               className={[
-                "flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border border-l-2 shadow-lg text-sm pointer-events-auto",
-                "bg-panel-elev text-text-primary animate-slide-in-down",
+                "flex items-center gap-2 px-3 py-2.5 rounded-md border border-border-soft border-l-4 shadow-DEFAULT text-sm pointer-events-auto",
+                "bg-panel text-text-primary animate-slide-in-down",
                 variantAccent[t.variant],
               ].join(" ")}
             >

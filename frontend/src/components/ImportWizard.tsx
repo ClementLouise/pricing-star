@@ -179,7 +179,7 @@ export function ImportWizard({
 
         {/* File drop zone */}
         <div
-          className="rounded border-2 border-dashed border-border hover:border-navy-500 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 py-8 px-4 text-center"
+          className="rounded border-2 border-dashed border-border hover:border-gold-500 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 py-8 px-4 text-center"
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {

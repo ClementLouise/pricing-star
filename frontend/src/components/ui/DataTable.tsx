@@ -72,7 +72,7 @@ export function DataTable<T>({
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="border-b border-border">
+          <tr className="border-b border-border bg-bg">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -103,7 +103,7 @@ export function DataTable<T>({
               <tr
                 key={String((row as Record<string, unknown>)[rowKey])}
                 className={[
-                  "border-b border-border/50",
+                  "border-b border-border-soft bg-panel",
                   onRowClick ? "cursor-pointer hover:bg-panel-elev transition-colors" : "",
                 ].join(" ")}
                 onClick={() => onRowClick?.(row)}
