@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import AssetDetailPage from "@/pages/AssetDetailPage";
 import AssetListPage from "@/pages/AssetListPage";
 import HomePage from "@/pages/HomePage";
+import LandingPage from "@/pages/LandingPage";
 import Loading from "@/pages/Loading";
 import MyDataPage from "@/pages/MyDataPage";
 
@@ -17,10 +18,13 @@ export default function App() {
   return (
     <ToastProvider>
       <Routes>
+        {/* Public — shows landing + login when unauthenticated, redirects to /home when logged in */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Protected */}
         <Route element={<AuthGuard />}>
           <Route path="/home" element={<HomePage />} />
           <Route path="/welcome" element={<Navigate to="/home" replace />} />
-          <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/settings/my-data" element={<MyDataPage />} />
           <Route path="/assets" element={<AssetListPage />} />
           <Route path="/assets/:assetId" element={<AssetDetailPage />} />

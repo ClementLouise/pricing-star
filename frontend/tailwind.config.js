@@ -43,6 +43,7 @@ export default {
       fontFamily: {
         sans: ['"IBM Plex Sans"', '-apple-system', 'BlinkMacSystemFont', '"Helvetica Neue"', 'Arial', 'sans-serif'],
         mono: ['"IBM Plex Mono"', '"SF Mono"', '"Monaco"', '"Inconsolata"', 'monospace'],
+        serif: ['"Fraunces"', 'Georgia', 'serif'],
       },
       fontSize: {
         xs: ['0.75rem', { lineHeight: '1.2' }],
@@ -67,6 +68,7 @@ export default {
         wider: '0.08em',
         widest: '0.12em',
         editorial: '0.18em',
+        'mono-label': '0.14em',
       },
       borderRadius: {
         none: '0',
