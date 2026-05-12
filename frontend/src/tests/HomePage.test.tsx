@@ -28,6 +28,9 @@ vi.mock("@/hooks/useUser", () => ({
   useUserMe: vi.fn(),
   useDismissWelcome: vi.fn(),
 }));
+vi.mock("@/hooks/useDownloadTemplate", () => ({
+  useDownloadTemplate: () => ({ downloadTemplate: vi.fn(), downloading: false }),
+}));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -104,7 +107,7 @@ describe("HomePage", () => {
     });
     await renderPage();
     expect(screen.getByText(/Tableau de bord/i)).toBeInTheDocument();
-    expect(screen.getByText(/Bonjour Sarah/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Bonjour Sarah/i })).toBeInTheDocument();
     expect(screen.queryByText(/Naviguer MFN/)).toBeNull();
   });
 

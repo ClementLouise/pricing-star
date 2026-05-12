@@ -112,9 +112,12 @@ function DidacticHeroBar({ firstName }: { firstName: string }) {
         <p className="font-mono text-[11px] uppercase tracking-editorial text-gold-500 mb-3">
           ■ Bienvenue
         </p>
-        <h1 className="text-5xl font-light tracking-tight text-text-primary mb-4">
+        <h1 className="text-5xl font-light tracking-tight text-text-primary mb-3">
           Bonjour <strong className="font-semibold">{firstName}</strong>
         </h1>
+        <p className="text-2xl font-light text-text-primary mb-4 tracking-tight">
+          Naviguer MFN. Défendre la NPV.
+        </p>
         <p className="text-base text-text-secondary max-w-2xl">
           Le premier outil dédié aux équipes pricing mid-cap pharma pour modéliser et défendre vos prix
           face aux régulations CMS Generous, Guard et Globe.
