@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 
 interface PillProps {
-  variant?: "success" | "warning" | "danger" | "info" | "neutral";
+  variant?: "success" | "warning" | "danger" | "info" | "neutral" | "trial";
   children: ReactNode;
   className?: string;
 }
@@ -12,6 +12,7 @@ const variantClasses: Record<NonNullable<PillProps["variant"]>, string> = {
   danger: "bg-danger-light text-danger border-danger/30",
   info: "bg-info-light text-info border-info/30",
   neutral: "bg-panel-elev text-text-secondary border-border",
+  trial: "bg-gold-500 text-bg border-gold-500",
 };
 
 export function Pill({ variant = "neutral", children, className = "" }: PillProps) {
