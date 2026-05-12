@@ -142,7 +142,8 @@ export default function LandingPage() {
         }`}
       >
         <div className="max-w-[1200px] mx-auto px-8 h-14 flex items-center justify-between">
-          <span className="font-mono text-[13px] uppercase tracking-[0.1em] text-text-primary font-medium">
+          <span className="flex items-center gap-2 font-mono text-[13px] uppercase tracking-[0.1em] text-text-primary font-medium">
+            <img src="/favicon.svg" alt="" width="20" height="20" className="shrink-0" />
             PRICING <span className="text-gold-500">★</span> STAR
           </span>
           <button
