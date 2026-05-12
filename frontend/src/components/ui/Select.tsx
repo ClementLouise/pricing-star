@@ -30,16 +30,20 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           value={value ?? ""}
           onChange={(e) => onChange?.(e.target.value)}
           className={[
-            "w-full h-9 rounded border bg-panel-elev text-sm text-text-primary pl-3 pr-8 appearance-none",
+            "w-full h-9 rounded border bg-panel text-sm text-text-primary pl-3 pr-8 appearance-none",
             "border-border",
-            "focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500",
+            "focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             error ? "border-danger" : "",
             className,
           ]
             .filter(Boolean)
             .join(" ")}
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E7681' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238C8473' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "right 10px center",
+          }}
           {...props}
         >
           {placeholder && (

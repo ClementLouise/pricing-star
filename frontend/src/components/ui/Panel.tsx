@@ -27,10 +27,10 @@ export function Panel({
   return (
     <div
       className={[
-        "rounded-lg",
+        "rounded-md",
         elevated ? "bg-panel-elev" : "bg-panel",
-        bordered ? "border border-border" : "",
-        interactive ? "hover:border-navy-700 transition-colors duration-base cursor-pointer" : "",
+        bordered ? "border border-border-soft" : "",
+        interactive ? "hover:border-gold-500 transition-colors duration-base cursor-pointer" : "",
         paddingClasses[padding],
         className,
       ]

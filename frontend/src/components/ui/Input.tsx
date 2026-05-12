@@ -26,9 +26,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={[
-              "w-full h-9 rounded border bg-panel-elev text-sm text-text-primary",
+              "w-full h-9 rounded border bg-panel text-sm text-text-primary",
               "border-border placeholder:text-text-tertiary",
-              "focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500",
+              "focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500",
               "disabled:opacity-50 disabled:cursor-not-allowed",
               error ? "border-danger" : "",
               prefix ? "pl-7" : "pl-3",

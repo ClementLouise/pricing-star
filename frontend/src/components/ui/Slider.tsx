@@ -31,9 +31,9 @@ export function Slider({
         </div>
       )}
       <div className="relative flex items-center h-5">
-        <div className="absolute w-full h-1 rounded bg-panel-elev border border-border">
+        <div className="absolute w-full h-1 rounded bg-border border border-border-soft">
           <div
-            className="h-full rounded bg-navy-500 transition-all duration-fast"
+            className="h-full rounded bg-gold-500 transition-all duration-fast"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -49,7 +49,7 @@ export function Slider({
           style={{ WebkitAppearance: "none" }}
         />
         <div
-          className="absolute w-3.5 h-3.5 rounded-full bg-navy-400 border-2 border-navy-500 shadow pointer-events-none transition-all duration-fast"
+          className="absolute w-3.5 h-3.5 rounded-full bg-panel-elev border-2 border-gold-500 shadow pointer-events-none transition-all duration-fast"
           style={{ left: `calc(${pct}% - 7px)` }}
         />
       </div>
